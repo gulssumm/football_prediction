@@ -1,0 +1,528 @@
+{
+ "cells": [
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "id": "3eacce31",
+   "metadata": {
+    "_cell_guid": "b1076dfc-b9ad-4769-8c92-a6c4dae69d19",
+    "_uuid": "8f2839f25d086af736a60e9eeb907d3b93b6e0e5",
+    "execution": {
+     "iopub.execute_input": "2024-11-05T21:14:55.239987Z",
+     "iopub.status.busy": "2024-11-05T21:14:55.239515Z",
+     "iopub.status.idle": "2024-11-05T21:14:56.232329Z",
+     "shell.execute_reply": "2024-11-05T21:14:56.230911Z"
+    },
+    "papermill": {
+     "duration": 1.001941,
+     "end_time": "2024-11-05T21:14:56.235091",
+     "exception": false,
+     "start_time": "2024-11-05T21:14:55.233150",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "/kaggle/input/football-soccer-league-odds-and-results/all_euro_data.csv\n"
+     ]
+    }
+   ],
+   "source": [
+    "# This Python 3 environment comes with many helpful analytics libraries installed\n",
+    "# It is defined by the kaggle/python Docker image: https://github.com/kaggle/docker-python\n",
+    "# For example, here's several helpful packages to load\n",
+    "\n",
+    "import numpy as np # linear algebra\n",
+    "import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)\n",
+    "\n",
+    "# Input data files are available in the read-only \"../input/\" directory\n",
+    "# For example, running this (by clicking run or pressing Shift+Enter) will list all files under the input directory\n",
+    "\n",
+    "import os\n",
+    "for dirname, _, filenames in os.walk('/kaggle/input'):\n",
+    "    for filename in filenames:\n",
+    "        print(os.path.join(dirname, filename))\n",
+    "\n",
+    "# You can write up to 20GB to the current directory (/kaggle/working/) that gets preserved as output when you create a version using \"Save & Run All\" \n",
+    "# You can also write temporary files to /kaggle/temp/, but they won't be saved outside of the current session"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "id": "9c8ca430",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-11-05T21:14:56.245871Z",
+     "iopub.status.busy": "2024-11-05T21:14:56.245301Z",
+     "iopub.status.idle": "2024-11-05T21:15:03.250713Z",
+     "shell.execute_reply": "2024-11-05T21:15:03.249464Z"
+    },
+    "papermill": {
+     "duration": 7.013956,
+     "end_time": "2024-11-05T21:15:03.253978",
+     "exception": false,
+     "start_time": "2024-11-05T21:14:56.240022",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Unique values in column FTR before conversion: [nan '3.0' '1.0' '0.0' '2.0' '4.0' '5.0' '6.0' '7.0' '1' '0' '2' '5' '4'\n",
+      " '3' '6' 'D' 'H' 'A']\n",
+      "Unique values in column FTR after conversion: [nan  3.  1.  0.  2.  4.  5.  6.  7.]\n",
+      "Unique values in column HTHG before conversion: [nan '0.0' '1.0' '3.0' '2.0' '4.0' '0' '1' '3' '2' '4' '5.0' '6.0' '6' '5']\n",
+      "Unique values in column HTHG after conversion: [nan  0.  1.  3.  2.  4.  5.  6.]\n",
+      "Unique values in column B365CAHH before conversion: [nan '2.03' '1.92' '2.07' '2.11' '1.99' '1.88' '2.06' '2.08' '1.87' '1.8'\n",
+      " '1.98' '2.13' '2.05' '1.91' '1.93' '1.97' '2.01' '1.84' '1.72' '1.9'\n",
+      " '2.02' '1.96' '2.0' '1.95' '2.1' '1.86' '1.7' '1.89' '1.85' '1.81' '2.15'\n",
+      " '1.83' '1.94' '1.77' '1.75' '2.14' '1.67' '2.04' '2.09' '1.82' '2.16'\n",
+      " '1.78' '1.73' '1.6' '1.79' '2.17' '1.55' '2.2' '1.65' '1.62' '2.19'\n",
+      " '2.25' '1.76' '1.68' '1.74' '2.38' '1.63' '3.45' '4.65' '3.0']\n",
+      "Unique values in column B365CAHH after conversion: [ nan 2.03 1.92 2.07 2.11 1.99 1.88 2.06 2.08 1.87 1.8  1.98 2.13 2.05\n",
+      " 1.91 1.93 1.97 2.01 1.84 1.72 1.9  2.02 1.96 2.   1.95 2.1  1.86 1.7\n",
+      " 1.89 1.85 1.81 2.15 1.83 1.94 1.77 1.75 2.14 1.67 2.04 2.09 1.82 2.16\n",
+      " 1.78 1.73 1.6  1.79 2.17 1.55 2.2  1.65 1.62 2.19 2.25 1.76 1.68 1.74\n",
+      " 2.38 1.63 3.45 4.65 3.  ]\n",
+      "Unique values in column PCAHH before conversion: [nan '1.99' '1.92' '1.94' '2.05' '2.17' '1.98' '1.86' '1.91' '2.03' '2.14'\n",
+      " '1.87' '1.96' '2.08' '2.06' '1.85' '1.93' '2.01' '1.84' '2.0' '1.81'\n",
+      " '2.02' '1.97' '2.07' '2.09' '1.78' '1.82' '2.1' '2.24' '1.83' '2.11'\n",
+      " '2.19' '1.9' '1.8' '1.95' '1.89' '1.88' '1.79' '2.15' '2.04' '2.13'\n",
+      " '1.72' '2.18' '2.12' '1.7' '2.16' '1.77' '2.2' '1.75' '1.76' '1.63'\n",
+      " '1.69' '2.21' '2.22' '1.61' '1.73' '2.23' '1.68' '1.71' '1.74' '1.64'\n",
+      " '2.25' '1.65' '2.49' '2.28' '1.66' '5.08' '1.67' '3.12']\n",
+      "Unique values in column PCAHH after conversion: [ nan 1.99 1.92 1.94 2.05 2.17 1.98 1.86 1.91 2.03 2.14 1.87 1.96 2.08\n",
+      " 2.06 1.85 1.93 2.01 1.84 2.   1.81 2.02 1.97 2.07 2.09 1.78 1.82 2.1\n",
+      " 2.24 1.83 2.11 2.19 1.9  1.8  1.95 1.89 1.88 1.79 2.15 2.04 2.13 1.72\n",
+      " 2.18 2.12 1.7  2.16 1.77 2.2  1.75 1.76 1.63 1.69 2.21 2.22 1.61 1.73\n",
+      " 2.23 1.68 1.71 1.74 1.64 2.25 1.65 2.49 2.28 1.66 5.08 1.67 3.12]\n",
+      "Unique values in column PCAHA before conversion: [nan '1.93' '2.0' '1.97' '1.86' '1.77' '1.94' '2.06' '2.01' '1.88' '1.79'\n",
+      " '2.04' '1.96' '1.84' '1.85' '2.07' '1.91' '2.08' '1.92' '2.11' '1.9'\n",
+      " '1.98' '1.83' '2.15' '2.05' '2.1' '1.99' '1.72' '2.09' '1.81' '1.76'\n",
+      " '2.16' '2.02' '2.12' '1.89' '1.95' '1.87' '2.03' '2.14' '1.78' '2.24'\n",
+      " '1.82' '1.8' '2.17' '2.13' '1.74' '2.2' '2.22' '2.21' '1.75' '2.18'\n",
+      " '2.19' '2.4' '2.27' '1.73' '2.45' '2.23' '2.28' '2.26' '1.7' '1.69'\n",
+      " '1.68' '2.29' '1.71' '2.39' '1.61' '2.35' '2.31' '2.25' '1.2' '2.33'\n",
+      " '2.38' '1.4']\n",
+      "Unique values in column PCAHA after conversion: [ nan 1.93 2.   1.97 1.86 1.77 1.94 2.06 2.01 1.88 1.79 2.04 1.96 1.84\n",
+      " 1.85 2.07 1.91 2.08 1.92 2.11 1.9  1.98 1.83 2.15 2.05 2.1  1.99 1.72\n",
+      " 2.09 1.81 1.76 2.16 2.02 2.12 1.89 1.95 1.87 2.03 2.14 1.78 2.24 1.82\n",
+      " 1.8  2.17 2.13 1.74 2.2  2.22 2.21 1.75 2.18 2.19 2.4  2.27 1.73 2.45\n",
+      " 2.23 2.28 2.26 1.7  1.69 1.68 2.29 1.71 2.39 1.61 2.35 2.31 2.25 1.2\n",
+      " 2.33 2.38 1.4 ]\n",
+      "Unique values in column MaxCAHH before conversion: [nan '2.04' '1.98' '1.97' '2.15' '1.95' '2.17' '2.02' '1.9' '2.08' '2.09'\n",
+      " '2.16' '1.96' '1.93' '2.01' '2.13' '2.07' '2.03' '2.11' '2.1' '1.86'\n",
+      " '2.2' '2.0' '1.8' '2.05' '1.87' '1.84' '1.82' '2.21' '2.28' '1.89' '2.19'\n",
+      " '1.83' '2.06' '1.99' '2.12' '1.85' '1.88' '2.14' '1.94' '1.91' '1.92'\n",
+      " '2.22' '2.24' '2.3' '2.35' '1.81' '2.26' '2.25' '2.18' '2.23' '1.78'\n",
+      " '1.79' '1.68' '2.31' '1.7' '2.75' '2.29' '2.27' '2.32' '2.69' '1.75'\n",
+      " '1.76' '5.5' '2.4' '3.65']\n",
+      "Unique values in column MaxCAHH after conversion: [ nan 2.04 1.98 1.97 2.15 1.95 2.17 2.02 1.9  2.08 2.09 2.16 1.96 1.93\n",
+      " 2.01 2.13 2.07 2.03 2.11 2.1  1.86 2.2  2.   1.8  2.05 1.87 1.84 1.82\n",
+      " 2.21 2.28 1.89 2.19 1.83 2.06 1.99 2.12 1.85 1.88 2.14 1.94 1.91 1.92\n",
+      " 2.22 2.24 2.3  2.35 1.81 2.26 2.25 2.18 2.23 1.78 1.79 1.68 2.31 1.7\n",
+      " 2.75 2.29 2.27 2.32 2.69 1.75 1.76 5.5  2.4  3.65]\n",
+      "Unique values in column MaxCAHA before conversion: [nan '1.93' '2.04' '2.06' '1.91' '2.11' '1.86' '2.13' '2.2' '1.89' '1.94'\n",
+      " '2.28' '1.99' '2.35' '2.02' '2.08' '1.9' '1.98' '2.16' '2.05' '2.0'\n",
+      " '1.95' '1.87' '1.85' '2.01' '1.81' '2.27' '1.97' '2.03' '2.3' '2.1'\n",
+      " '2.19' '1.83' '2.07' '1.84' '1.8' '2.21' '1.92' '2.17' '2.12' '2.14'\n",
+      " '2.25' '2.09' '1.96' '2.18' '1.82' '2.7' '1.88' '2.15' '1.79' '2.26'\n",
+      " '2.23' '2.31' '2.22' '2.24' '2.48' '1.77' '2.51' '1.4' '1.78' '2.33'\n",
+      " '1.76' '2.29' '2.32' '2.34' '2.42' '2.47' '1.65' '2.38' '1.2' '2.36'\n",
+      " '2.39' '1.44']\n",
+      "Unique values in column MaxCAHA after conversion: [ nan 1.93 2.04 2.06 1.91 2.11 1.86 2.13 2.2  1.89 1.94 2.28 1.99 2.35\n",
+      " 2.02 2.08 1.9  1.98 2.16 2.05 2.   1.95 1.87 1.85 2.01 1.81 2.27 1.97\n",
+      " 2.03 2.3  2.1  2.19 1.83 2.07 1.84 1.8  2.21 1.92 2.17 2.12 2.14 2.25\n",
+      " 2.09 1.96 2.18 1.82 2.7  1.88 2.15 1.79 2.26 2.23 2.31 2.22 2.24 2.48\n",
+      " 1.77 2.51 1.4  1.78 2.33 1.76 2.29 2.32 2.34 2.42 2.47 1.65 2.38 1.2\n",
+      " 2.36 2.39 1.44]\n",
+      "Unique values in column AvgCAHH before conversion: [nan '1.98' '1.91' '1.9' '2.03' '1.89' '2.09' '1.93' '1.86' '1.92' '2.05'\n",
+      " '2.06' '1.83' '1.96' '2.08' '1.85' '2.02' '1.81' '1.97' '1.99' '1.94'\n",
+      " '2.07' '2.0' '1.95' '2.14' '1.76' '1.8' '1.77' '2.21' '2.12' '2.16'\n",
+      " '1.78' '1.88' '2.01' '1.87' '1.79' '1.84' '2.04' '2.13' '1.7' '1.82'\n",
+      " '2.1' '2.15' '2.11' '1.75' '1.72' '1.74' '1.73' '1.63' '1.61' '2.75'\n",
+      " '2.19' '1.71' '1.69' '1.68' '2.46' '2.18' '4.9' '3.08']\n",
+      "Unique values in column AvgCAHH after conversion: [ nan 1.98 1.91 1.9  2.03 1.89 2.09 1.93 1.86 1.92 2.05 2.06 1.83 1.96\n",
+      " 2.08 1.85 2.02 1.81 1.97 1.99 1.94 2.07 2.   1.95 2.14 1.76 1.8  1.77\n",
+      " 2.21 2.12 2.16 1.78 1.88 2.01 1.87 1.79 1.84 2.04 2.13 1.7  1.82 2.1\n",
+      " 2.15 2.11 1.75 1.72 1.74 1.73 1.63 1.61 2.75 2.19 1.71 1.69 1.68 2.46\n",
+      " 2.18 4.9  3.08]\n",
+      "Unique values in column AvgCAHA before conversion: [nan '1.91' '1.97' '1.99' '1.85' '2.0' '1.81' '1.95' '2.03' '1.84' '1.83'\n",
+      " '2.05' '1.92' '1.82' '1.9' '1.96' '2.04' '1.86' '1.87' '2.08' '2.06'\n",
+      " '1.89' '1.94' '1.93' '1.98' '1.76' '2.02' '2.15' '2.09' '2.12' '1.72'\n",
+      " '1.77' '1.75' '2.1' '1.88' '2.11' '2.01' '2.07' '1.78' '1.8' '2.22'\n",
+      " '1.79' '1.73' '2.13' '2.18' '2.14' '2.16' '1.74' '2.3' '2.36' '1.4'\n",
+      " '1.71' '2.17' '2.21' '2.2' '2.19' '2.24' '1.57' '1.7' '1.18' '2.23'\n",
+      " '1.39']\n",
+      "Unique values in column AvgCAHA after conversion: [ nan 1.91 1.97 1.99 1.85 2.   1.81 1.95 2.03 1.84 1.83 2.05 1.92 1.82\n",
+      " 1.9  1.96 2.04 1.86 1.87 2.08 2.06 1.89 1.94 1.93 1.98 1.76 2.02 2.15\n",
+      " 2.09 2.12 1.72 1.77 1.75 2.1  1.88 2.11 2.01 2.07 1.78 1.8  2.22 1.79\n",
+      " 1.73 2.13 2.18 2.14 2.16 1.74 2.3  2.36 1.4  1.71 2.17 2.21 2.2  2.19\n",
+      " 2.24 1.57 1.7  1.18 2.23 1.39]\n",
+      "  Div        Date         Time        HomeTeam AwayTeam FTHG FTAG  FTR  HTHG  \\\n",
+      "0  E0  1993-08-14      Arsenal        Coventry      0.0  3.0    A  NaN   NaN   \n",
+      "1  E0  1993-08-14  Aston Villa             QPR      4.0  1.0    H  NaN   NaN   \n",
+      "2  E0  1993-08-14      Chelsea       Blackburn      1.0  2.0    A  NaN   NaN   \n",
+      "3  E0  1993-08-14    Liverpool  Sheffield Weds      2.0  0.0    H  NaN   NaN   \n",
+      "4  E0  1993-08-14     Man City           Leeds      1.0  1.0    D  NaN   NaN   \n",
+      "\n",
+      "  HTAG  ... AvgC<2.5 AHCh B365CAHH B365CAHA PCAHH PCAHA MaxCAHH MaxCAHA  \\\n",
+      "0  NaN  ...      NaN  NaN      NaN      NaN   NaN   NaN     NaN     NaN   \n",
+      "1  NaN  ...      NaN  NaN      NaN      NaN   NaN   NaN     NaN     NaN   \n",
+      "2  NaN  ...      NaN  NaN      NaN      NaN   NaN   NaN     NaN     NaN   \n",
+      "3  NaN  ...      NaN  NaN      NaN      NaN   NaN   NaN     NaN     NaN   \n",
+      "4  NaN  ...      NaN  NaN      NaN      NaN   NaN   NaN     NaN     NaN   \n",
+      "\n",
+      "  AvgCAHH AvgCAHA  \n",
+      "0     NaN     NaN  \n",
+      "1     NaN     NaN  \n",
+      "2     NaN     NaN  \n",
+      "3     NaN     NaN  \n",
+      "4     NaN     NaN  \n",
+      "\n",
+      "[5 rows x 105 columns]\n"
+     ]
+    }
+   ],
+   "source": [
+    "import pandas as pd\n",
+    "\n",
+    "# Load data with all columns as strings\n",
+    "df = pd.read_csv('/kaggle/input/football-soccer-league-odds-and-results/all_euro_data.csv', on_bad_lines='skip', dtype=str)\n",
+    "\n",
+    "# Check the columns with mixed types\n",
+    "mixed_columns = ['FTR', 'HTHG', 'B365CAHH', 'PCAHH', 'PCAHA', 'MaxCAHH', 'MaxCAHA', 'AvgCAHH', 'AvgCAHA']\n",
+    "\n",
+    "# Display unique values in each column and convert columns to numeric where possible\n",
+    "for col in mixed_columns:\n",
+    "    print(f\"Unique values in column {col} before conversion:\", df[col].unique())\n",
+    "    df[col] = pd.to_numeric(df[col], errors='coerce')  # Convert to numeric, setting errors to NaN for non-numeric values\n",
+    "    print(f\"Unique values in column {col} after conversion:\", df[col].unique())\n",
+    "\n",
+    "# Take a look at the first few rows to confirm changes\n",
+    "print(df.head())"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "id": "ef0c99af",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-11-05T21:15:03.264743Z",
+     "iopub.status.busy": "2024-11-05T21:15:03.264316Z",
+     "iopub.status.idle": "2024-11-05T21:15:04.637268Z",
+     "shell.execute_reply": "2024-11-05T21:15:04.635831Z"
+    },
+    "papermill": {
+     "duration": 1.381576,
+     "end_time": "2024-11-05T21:15:04.640144",
+     "exception": false,
+     "start_time": "2024-11-05T21:15:03.258568",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Div          17179\n",
+      "Date         17179\n",
+      "Time         17179\n",
+      "HomeTeam     17179\n",
+      "AwayTeam     17181\n",
+      "             ...  \n",
+      "PCAHA       197420\n",
+      "MaxCAHH     197414\n",
+      "MaxCAHA     197414\n",
+      "AvgCAHH     197414\n",
+      "AvgCAHA     197414\n",
+      "Length: 105, dtype: int64\n"
+     ]
+    }
+   ],
+   "source": [
+    "print(df.isnull().sum())"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 4,
+   "id": "b83dd553",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-11-05T21:15:04.651604Z",
+     "iopub.status.busy": "2024-11-05T21:15:04.651129Z",
+     "iopub.status.idle": "2024-11-05T21:15:06.260387Z",
+     "shell.execute_reply": "2024-11-05T21:15:06.259006Z"
+    },
+    "papermill": {
+     "duration": 1.618277,
+     "end_time": "2024-11-05T21:15:06.263392",
+     "exception": false,
+     "start_time": "2024-11-05T21:15:04.645115",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "  Div        Date         Time        HomeTeam AwayTeam FTHG FTAG  FTR  HTHG  \\\n",
+      "0  E0  1993-08-14      Arsenal        Coventry      0.0  3.0    A  NaN   NaN   \n",
+      "1  E0  1993-08-14  Aston Villa             QPR      4.0  1.0    H  NaN   NaN   \n",
+      "2  E0  1993-08-14      Chelsea       Blackburn      1.0  2.0    A  NaN   NaN   \n",
+      "3  E0  1993-08-14    Liverpool  Sheffield Weds      2.0  0.0    H  NaN   NaN   \n",
+      "4  E0  1993-08-14     Man City           Leeds      1.0  1.0    D  NaN   NaN   \n",
+      "\n",
+      "  HTAG  ... AvgD AvgA B365>2.5 B365<2.5 P>2.5 P<2.5 Max>2.5 Max<2.5 Avg>2.5  \\\n",
+      "0  NaN  ...  NaN  NaN      NaN      NaN   NaN   NaN     NaN     NaN     NaN   \n",
+      "1  NaN  ...  NaN  NaN      NaN      NaN   NaN   NaN     NaN     NaN     NaN   \n",
+      "2  NaN  ...  NaN  NaN      NaN      NaN   NaN   NaN     NaN     NaN     NaN   \n",
+      "3  NaN  ...  NaN  NaN      NaN      NaN   NaN   NaN     NaN     NaN     NaN   \n",
+      "4  NaN  ...  NaN  NaN      NaN      NaN   NaN   NaN     NaN     NaN     NaN   \n",
+      "\n",
+      "  Avg<2.5  \n",
+      "0     NaN  \n",
+      "1     NaN  \n",
+      "2     NaN  \n",
+      "3     NaN  \n",
+      "4     NaN  \n",
+      "\n",
+      "[5 rows x 55 columns]\n"
+     ]
+    }
+   ],
+   "source": [
+    "# Drop columns with more than 50% missing values\n",
+    "threshold = len(df) * 0.5\n",
+    "df = df.dropna(thresh=threshold, axis=1)\n",
+    "print(df.head())"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 5,
+   "id": "2dd4c12a",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-11-05T21:15:06.275385Z",
+     "iopub.status.busy": "2024-11-05T21:15:06.274096Z",
+     "iopub.status.idle": "2024-11-05T21:15:08.504519Z",
+     "shell.execute_reply": "2024-11-05T21:15:08.503279Z"
+    },
+    "papermill": {
+     "duration": 2.239413,
+     "end_time": "2024-11-05T21:15:08.507405",
+     "exception": false,
+     "start_time": "2024-11-05T21:15:06.267992",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "  Div        Date         Time        HomeTeam AwayTeam FTHG FTAG  FTR  HTHG  \\\n",
+      "0  E0  1993-08-14      Arsenal        Coventry      0.0  3.0    A  0.0   0.0   \n",
+      "1  E0  1993-08-14  Aston Villa             QPR      4.0  1.0    H  0.0   0.0   \n",
+      "2  E0  1993-08-14      Chelsea       Blackburn      1.0  2.0    A  0.0   0.0   \n",
+      "3  E0  1993-08-14    Liverpool  Sheffield Weds      2.0  0.0    H  0.0   0.0   \n",
+      "4  E0  1993-08-14     Man City           Leeds      1.0  1.0    D  0.0   0.0   \n",
+      "\n",
+      "      HTAG  ...     AvgD     AvgA B365>2.5 B365<2.5    P>2.5    P<2.5  \\\n",
+      "0  Unknown  ...  Unknown  Unknown  Unknown  Unknown  Unknown  Unknown   \n",
+      "1  Unknown  ...  Unknown  Unknown  Unknown  Unknown  Unknown  Unknown   \n",
+      "2  Unknown  ...  Unknown  Unknown  Unknown  Unknown  Unknown  Unknown   \n",
+      "3  Unknown  ...  Unknown  Unknown  Unknown  Unknown  Unknown  Unknown   \n",
+      "4  Unknown  ...  Unknown  Unknown  Unknown  Unknown  Unknown  Unknown   \n",
+      "\n",
+      "   Max>2.5  Max<2.5  Avg>2.5  Avg<2.5  \n",
+      "0  Unknown  Unknown  Unknown  Unknown  \n",
+      "1  Unknown  Unknown  Unknown  Unknown  \n",
+      "2  Unknown  Unknown  Unknown  Unknown  \n",
+      "3  Unknown  Unknown  Unknown  Unknown  \n",
+      "4  Unknown  Unknown  Unknown  Unknown  \n",
+      "\n",
+      "[5 rows x 55 columns]\n"
+     ]
+    }
+   ],
+   "source": [
+    "# Fill numerical columns with the median\n",
+    "num_cols = df.select_dtypes(include=['float64', 'int64']).columns\n",
+    "df[num_cols] = df[num_cols].fillna(df[num_cols].median())\n",
+    "\n",
+    "# Fill categorical columns with 'Unknown'\n",
+    "cat_cols = df.select_dtypes(include=['object']).columns\n",
+    "df[cat_cols] = df[cat_cols].fillna('Unknown')\n",
+    "\n",
+    "print(df.head())"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 6,
+   "id": "03078d6f",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-11-05T21:15:08.519425Z",
+     "iopub.status.busy": "2024-11-05T21:15:08.518989Z",
+     "iopub.status.idle": "2024-11-05T21:15:10.199509Z",
+     "shell.execute_reply": "2024-11-05T21:15:10.198298Z"
+    },
+    "papermill": {
+     "duration": 1.690118,
+     "end_time": "2024-11-05T21:15:10.202735",
+     "exception": false,
+     "start_time": "2024-11-05T21:15:08.512617",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "# Drop rows with any remaining missing values\n",
+    "df = df.dropna()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 7,
+   "id": "10269a9d",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-11-05T21:15:10.214462Z",
+     "iopub.status.busy": "2024-11-05T21:15:10.214029Z",
+     "iopub.status.idle": "2024-11-05T21:15:11.458638Z",
+     "shell.execute_reply": "2024-11-05T21:15:11.457385Z"
+    },
+    "papermill": {
+     "duration": 1.253373,
+     "end_time": "2024-11-05T21:15:11.461124",
+     "exception": false,
+     "start_time": "2024-11-05T21:15:10.207751",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "0\n"
+     ]
+    }
+   ],
+   "source": [
+    "# Verify that all missing values have been handled\n",
+    "print(df.isnull().sum().sum())  # Should print 0 if no missing values remain"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 8,
+   "id": "281ad498",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-11-05T21:15:11.473234Z",
+     "iopub.status.busy": "2024-11-05T21:15:11.472397Z",
+     "iopub.status.idle": "2024-11-05T21:15:11.503207Z",
+     "shell.execute_reply": "2024-11-05T21:15:11.501723Z"
+    },
+    "papermill": {
+     "duration": 0.039753,
+     "end_time": "2024-11-05T21:15:11.505903",
+     "exception": false,
+     "start_time": "2024-11-05T21:15:11.466150",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "                 FTR           HTHG\n",
+      "count  206802.000000  206802.000000\n",
+      "mean        0.499676       0.395528\n",
+      "std         0.760688       0.664013\n",
+      "min         0.000000       0.000000\n",
+      "25%         0.000000       0.000000\n",
+      "50%         0.000000       0.000000\n",
+      "75%         1.000000       1.000000\n",
+      "max         7.000000       6.000000\n"
+     ]
+    }
+   ],
+   "source": [
+    "print(df.describe())\n",
+    "# FTR = FULL TIME RESULT"
+   ]
+  }
+ ],
+ "metadata": {
+  "kaggle": {
+   "accelerator": "none",
+   "dataSources": [
+    {
+     "datasetId": 1642583,
+     "sourceId": 2921024,
+     "sourceType": "datasetVersion"
+    }
+   ],
+   "dockerImageVersionId": 30786,
+   "isGpuEnabled": false,
+   "isInternetEnabled": true,
+   "language": "python",
+   "sourceType": "notebook"
+  },
+  "kernelspec": {
+   "display_name": "Python 3",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.10.14"
+  },
+  "papermill": {
+   "default_parameters": {},
+   "duration": 19.924126,
+   "end_time": "2024-11-05T21:15:12.033295",
+   "environment_variables": {},
+   "exception": null,
+   "input_path": "__notebook__.ipynb",
+   "output_path": "__notebook__.ipynb",
+   "parameters": {},
+   "start_time": "2024-11-05T21:14:52.109169",
+   "version": "2.6.0"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 5
+}
