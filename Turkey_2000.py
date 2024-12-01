@@ -3,29 +3,37 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 import time
 
+# File containing URLs with {i} as a placeholder
+input_file = "urls.txt"
+# Output CSV file
+csv_file = "output_data.csv"
+
 # Initialize the Selenium WebDriver
 driver = webdriver.Chrome()  # Ensure ChromeDriver is installed and in PATH
 
-# Name of the CSV file to create
-csv_file = "2000_3_home_teams.csv"
-
-# Open the CSV file in write mode (this will create the file if it doesn't exist)
+# Open the CSV file in write mode
 with open(csv_file, mode="w", newline="", encoding="utf-8-sig") as file:
     writer = csv.writer(file)
-    writer.writerow(["League Name", "Date", "Home Team", "Home Score", "Away Score", "Away Team"])  # Updated header row
+    # Write the header row
+    writer.writerow(["League Name", "Date", "Home Team", "Home Score", "Away Score", "Away Team"])
 
-    # Loop through all weeks (1 to 34)
-    for j in range(2, -1, -1):
-        for i in range(1, 35):
-            url = f'https://www.tff.org/Default.aspx?pageID=55{j}&hafta={i}#grp'
-            driver.get(url)
+    # Read the URLs from the text file
+    with open(input_file, mode="r", encoding="utf-8") as url_file:
+        urls = [line.strip() for line in url_file.readlines()]  # Read and strip lines
+
+    # Loop through each URL template
+    for i in range(1, 36):  # Replace {i} with values from 1 to 35
+        for url_template in urls:
+            url = url_template.replace("{i}", str(i))  # Replace {i} with the current value of i
+            print(f"Processing URL: {url}")
+            driver.get(url)  # Open the URL in the browser
 
             # Wait for the page to load
             time.sleep(5)
 
             try:
                 # Find the league name
-                league_element = driver.find_element(By.XPATH,"/html/body/form/div[4]/div/section[2]/article[2]/div[1]/b/i/a")
+                league_element = driver.find_element(By.XPATH, "/html/body/form/div[4]/div/section[2]/article[2]/div[1]/b/i/a")
                 league_name = league_element.text.strip()
 
                 # Find all home team elements
@@ -34,19 +42,18 @@ with open(csv_file, mode="w", newline="", encoding="utf-8-sig") as file:
 
                 # Find the date elements
                 dates = driver.find_elements(By.XPATH, "//td[@class='haftaninMaclariTarih']")
-                match_dates = [date.text.strip() for date in dates]  # List of match dates
+                match_dates = [date.text.strip() for date in dates]
 
                 # Find the score elements
                 scores = driver.find_elements(By.XPATH, "//td[@class='haftaninMaclariSkor']")
-                score_results = [score.text.strip() for score in scores]  # List of scores
+                score_results = [score.text.strip() for score in scores]
 
                 # Find the away team elements
                 away_teams = driver.find_elements(By.XPATH, "//td[@class='haftaninMaclariDeplasman']/a/span")
-                away_team_names = [away_team.text.strip() for away_team in away_teams]  # List of away teams
+                away_team_names = [away_team.text.strip() for away_team in away_teams]
 
                 # Ensure each home team aligns with its respective date
-                for home_team, match_date, score_1, away_team in zip(home_team_names, match_dates, score_results,
-                                                                     away_team_names):
+                for home_team, match_date, score_1, away_team in zip(home_team_names, match_dates, score_results, away_team_names):
                     # Split score into home_score and away_score
                     try:
                         home_score, away_score = map(int, score_1.split('-'))  # Convert both parts to integers
@@ -59,7 +66,7 @@ with open(csv_file, mode="w", newline="", encoding="utf-8-sig") as file:
                     writer.writerow([league_name, match_date, home_team, home_score, away_score, away_team])
 
             except Exception as e:
-                print(f"Error on week {i}: {e}")
+                print(f"Error processing URL {url}: {e}")
 
 # Close the browser
 driver.quit()
