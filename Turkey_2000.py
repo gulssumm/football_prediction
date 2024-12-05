@@ -3,10 +3,10 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 import time
 
-# File containing URLs with {i} as a placeholder
-input_file = "urls.txt"
+# File containing URLs with placeholders for ID and {i}
+input_file = "urls1.txt"
 # Output CSV file
-csv_file = "output_data.csv"
+csv_file = "output_data2.csv"
 
 # Initialize the Selenium WebDriver
 driver = webdriver.Chrome()  # Ensure ChromeDriver is installed and in PATH
@@ -17,14 +17,14 @@ with open(csv_file, mode="w", newline="", encoding="utf-8-sig") as file:
     # Write the header row
     writer.writerow(["League Name", "Date", "Home Team", "Home Score", "Away Score", "Away Team"])
 
-    # Read the URLs from the text file
+    # Read the URL templates from the text file
     with open(input_file, mode="r", encoding="utf-8") as url_file:
         urls = [line.strip() for line in url_file.readlines()]  # Read and strip lines
 
     # Loop through each URL template
-    for i in range(1, 36):  # Replace {i} with values from 1 to 35
-        for url_template in urls:
-            url = url_template.replace("{i}", str(i))  # Replace {i} with the current value of i
+    for url_template in urls:
+        for i in range(1, 36):  # Replace {i} with values from 1 to 35
+            url = url_template.replace("{i}", str(i))  # Replace {i} with the current value
             print(f"Processing URL: {url}")
             driver.get(url)  # Open the URL in the browser
 
