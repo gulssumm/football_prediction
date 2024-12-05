@@ -4,9 +4,9 @@ from selenium.webdriver.common.by import By
 import time
 
 # File containing URLs with placeholders for ID and {i}
-input_file = "urls1.txt"
+input_file = "urls.txt"
 # Output CSV file
-csv_file = "output_data2.csv"
+csv_file = "2000_24_TR_superlig.csv"
 
 # Initialize the Selenium WebDriver
 driver = webdriver.Chrome()  # Ensure ChromeDriver is installed and in PATH
