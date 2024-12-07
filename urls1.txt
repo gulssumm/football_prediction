@@ -19,5 +19,3 @@ https://www.tff.org/Default.aspx?pageId=1469&hafta={i}#grp
 https://www.tff.org/Default.aspx?pageID=1502&hafta={i}#grp
 https://www.tff.org/Default.aspx?pageID=1530&hafta={i}#grp
 https://www.tff.org/Default.aspx?pageID=1580&hafta={i}#grp
-https://www.tff.org/Default.aspx?pageID=1629&hafta={i}#grp
-https://www.tff.org/Default.aspx?pageID=1649&hafta={i}#grp
