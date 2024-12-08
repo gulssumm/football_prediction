@@ -1,74 +1,44 @@
-import csv
 from selenium import webdriver
 from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 import time
 
-# File containing URLs with placeholders for ID and {i}
-input_file = "SpainUrl.txt"
-# Output CSV file
-csv_file = "2000_24_SpainLaLiga.csv"
+# Configure WebDriver
+options = webdriver.ChromeOptions()
+options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
+driver = webdriver.Chrome(options=options)
 
-# Initialize the Selenium WebDriver
-driver = webdriver.Chrome()  # Ensure ChromeDriver is installed and in PATH
+try:
+    # Open the webpage
+    url = "https://www.transfermarkt.com/laliga/gesamtspielplan/wettbewerb/ES1/saison_id/2000"
+    driver.get(url)
 
-# Open the CSV file in write mode
-with open(csv_file, mode="w", newline="", encoding="utf-8-sig") as file:
-    writer = csv.writer(file)
-    # Write the header row
-    writer.writerow(["League Name", "Date", "Home Team", "Home Score", "Away Score", "Away Team"])
+    # Wait for the page to load completely
+    WebDriverWait(driver, 60).until(
+        lambda d: d.execute_script("return document.readyState") == "complete"
+    )
+    print("Page fully loaded!")
 
-    # Read the URL templates from the text file
-    with open(input_file, mode="r", encoding="utf-8") as url_file:
-        urls = [line.strip() for line in url_file.readlines()]  # Read and strip lines
+    # Debugging: Save a screenshot
+    driver.save_screenshot("page_loaded.png")
 
-    # Loop through each URL template
-    for url_template in urls:
-        for i in range(1, 36):  # Replace {i} with values from 1 to 35
-            url = url_template.replace("{i}", str(i))  # Replace {i} with the current value
-            print(f"Processing URL: {url}")
-            driver.get(url)  # Open the URL in the browser
+    # Wait for the table to appear
+    WebDriverWait(driver, 30).until(
+        EC.presence_of_element_located((By.XPATH, "//table[contains(@class, 'box')]"))
+    )
+    print("Table found!")
 
-            # Wait for the page to load
-            time.sleep(5)
+    # Debugging: Print the page source
+    with open("page_source.html", "w", encoding="utf-8") as f:
+        f.write(driver.page_source)
 
-            try:
-                # Find the league name
-                league_element = driver.find_element(By.XPATH, "/html/body/div[1]/main/header/div[1]/div")
-                league_name = league_element.text.strip()
+    # Extract table rows
+    rows = driver.find_elements(By.XPATH, "//table[contains(@class, 'box')]//tr")
+    print(f"Number of rows found: {len(rows)}")
 
-                # Find all home team elements
-                home_teams = driver.find_elements(By.XPATH, "/html/body/div[1]/main/div/div[1]/div[2]/div[1]/div/table/tbody/tr[4]/td[3]")
-                home_team_names = [team.text.strip() for team in home_teams]
+except Exception as e:
+    print(f"Error: {e}")
 
-                # Find the date elements
-                dates = driver.find_elements(By.XPATH, "/html/body/div[1]/main/div/div[1]/div[2]/div[1]/div/table/tbody/tr[2]/td[1]")
-                match_dates = [date.text.strip() for date in dates]
-
-                # Find the score elements
-                scores = driver.find_elements(By.XPATH, "/html/body/div[1]/main/div/div[1]/div[2]/div[1]/div/table/tbody/tr[2]/td[5]")
-                score_results = [score.text.strip() for score in scores]
-
-                # Find the away team elements
-                away_teams = driver.find_elements(By.XPATH, "/html/body/div[1]/main/div/div[1]/div[2]/div[1]/div/table/tbody/tr[2]/td[7]")
-                away_team_names = [away_team.text.strip() for away_team in away_teams]
-
-                # Ensure each home team aligns with its respective date
-                for home_team, match_date, score_1, away_team in zip(home_team_names, match_dates, score_results, away_team_names):
-                    # Split score into home_score and away_score
-                    try:
-                        home_score, away_score = map(int, score_1.split(':'))  # Convert both parts to integers
-                    except ValueError:
-                        # If score is not in "x-y" format, skip this entry
-                        print(f"Skipping invalid score: {score_1}")
-                        continue
-
-                    # Write data to the CSV
-                    writer.writerow([league_name, match_date, home_team, home_score, away_score, away_team])
-
-            except Exception as e:
-                print(f"Error processing URL {url}: {e}")
-
-# Close the browser
-driver.quit()
-
-print(f"Data has been saved to {csv_file}")
+finally:
+    driver.quit()
