@@ -1,11 +1,8 @@
 from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
-from bs4 import BeautifulSoup
 import pandas as pd
 
 # Set up Selenium WebDriver
-#service = Service("path/to/chromedriver")  # Update this path to your ChromeDriver location
 options = webdriver.ChromeOptions()
 options.add_argument("--headless")  # Run in headless mode (optional)
 driver = webdriver.Chrome(options=options)
@@ -15,16 +12,7 @@ url = 'https://www.skysports.com/la-liga-results/2000-01'
 driver.get(url)
 
 # Let the page load completely
-driver.implicitly_wait(5)  # Adjust the wait time if needed
-
-# Parse the page content with BeautifulSoup
-soup = BeautifulSoup(driver.page_source, 'html.parser')
-
-# Close the driver after page load
-driver.quit()
-
-# Find the container for all matches
-matches = soup.find_all('div', {'class': 'fixres__item'})
+driver.implicitly_wait(5)
 
 # Initialize empty lists to store the extracted data
 dates = []
@@ -32,40 +20,53 @@ home_teams = []
 away_teams = []
 home_scores = []
 away_scores = []
-scores = []
 
-# Loop through each match section and extract details
-for match in matches:
-    # Extract the date (the date is in a separate header above the match section)
-    date_header = match.find_previous('h3', {'class': 'fixres__header1'})
-    date = date_header.get_text(strip=True) if date_header else 'Unknown'
+# Get all headers and their following matches
+sections = driver.find_elements(By.XPATH, "//h3[contains(@class, 'fixres__header1')]/..")
 
-    # Extract teams
-    team_elements = match.find_all('span', {'class': 'swap-text__target'})
-    if len(team_elements) == 2:
-        home_team = team_elements[0].get_text(strip=True)
-        away_team = team_elements[1].get_text(strip=True)
-    else:
-        home_team, away_team = 'Unknown', 'Unknown'
+# Loop through each section
+for section in sections:
+    # Extract the date from the header
+    date_header = section.find_element(By.CLASS_NAME, 'fixres__header1')
+    date = date_header.text.strip()
 
-    # Extract score
-    score_element = match.find('span', {'class': 'matches__item-col matches__status'})
-    score = score_element.get_text(strip=True) if score_element else 'N/A'
+    # Find all matches under this section
+    match_elements = section.find_elements(By.CLASS_NAME, 'fixres__item')
 
-    # Append the data to the lists
-    dates.append(date)
-    home_teams.append(home_team)
-    away_teams.append(away_team)
-    scores.append(score)
-    #home_scores.append(home_score)
-    #away_scores.append(away_score)
+    for match in match_elements:
+        # Extract teams
+        try:
+            team_elements = match.find_elements(By.CLASS_NAME, 'swap-text__target')
+            home_team = team_elements[0].text if len(team_elements) > 0 else 'Unknown'
+            away_team = team_elements[1].text if len(team_elements) > 1 else 'Unknown'
+        except:
+            home_team, away_team = 'Unknown', 'Unknown'
+
+        # Extract scores
+        try:
+            score_elements = match.find_elements(By.CLASS_NAME, 'matches__teamscores-side')
+            home_score = score_elements[0].text if len(score_elements) > 0 else 'N/A'
+            away_score = score_elements[1].text if len(score_elements) > 1 else 'N/A'
+        except:
+            home_score, away_score = 'N/A', 'N/A'
+
+        # Append the data to the lists
+        dates.append(date)
+        home_teams.append(home_team)
+        away_teams.append(away_team)
+        home_scores.append(home_score)
+        away_scores.append(away_score)
+
+# Close the driver after scraping
+driver.quit()
 
 # Create a DataFrame to organize the data
 data = {
     'Date': dates,
-    'Home Team': home_team,
-    'Away Team': away_team,
-    'Score': score
+    'Home Team': home_teams,
+    'Away Team': away_teams,
+    'Home Score': home_scores,
+    'Away Score': away_scores
 }
 df = pd.DataFrame(data)
 
