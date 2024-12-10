@@ -33,7 +33,7 @@ for section in sections:
         # Extract the date from the header
         date_header = section.find_element(By.CLASS_NAME, 'fixres__header1')
         date = date_header.text.strip()
-        
+
         # Extract teams
         try:
             team_elements = match.find_elements(By.CLASS_NAME, 'swap-text__target')
