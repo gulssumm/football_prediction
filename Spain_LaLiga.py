@@ -1,20 +1,30 @@
-import requests
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.common.by import By
 from bs4 import BeautifulSoup
 import pandas as pd
 
+# Set up Selenium WebDriver
+#service = Service("path/to/chromedriver")  # Update this path to your ChromeDriver location
+options = webdriver.ChromeOptions()
+options.add_argument("--headless")  # Run in headless mode (optional)
+driver = webdriver.Chrome(options=options)
+
 # URL of the page you want to scrape
 url = 'https://www.skysports.com/la-liga-results/2000-01'
+driver.get(url)
 
-# Send a GET request to fetch the page content
-response = requests.get(url)
-response.raise_for_status()  # Check if the request was successful
+# Let the page load completely
+driver.implicitly_wait(5)  # Adjust the wait time if needed
 
 # Parse the page content with BeautifulSoup
-soup = BeautifulSoup(response.text, 'html.parser')
+soup = BeautifulSoup(driver.page_source, 'html.parser')
 
-# Find the section containing the match results
-# Based on the structure of the page, we need to locate the right div containing the matches
-match_sections = soup.find_all('div', {'class': 'match-day'})
+# Close the driver after page load
+driver.quit()
+
+# Find the container for all matches
+matches = soup.find_all('div', {'class': 'fixres__item'})
 
 # Initialize empty lists to store the extracted data
 dates = []
@@ -22,24 +32,27 @@ teams = []
 scores = []
 
 # Loop through each match section and extract details
-for section in match_sections:
-    # Find the date for the match day
-    date = section.find('span', {'class': 'match-day__date'})
-    if date:
-        dates.append(date.get_text(strip=True))
+for match in matches:
+    # Extract the date (the date is in a separate header above the match section)
+    date_header = match.find_previous('h3', {'class': 'fixres__header1'})
+    date = date_header.get_text(strip=True) if date_header else 'Unknown'
 
-    # Find the teams and scores for the matches in this section
-    matches = section.find_all('div', {'class': 'match'})
-    for match in matches:
-        # Extract teams and score
-        home_team = match.find('span', {'class': 'swap-text__target'}).get_text(strip=True)
-        away_team = match.find('span', {'class': 'swap-text__target'}).get_text(strip=True)
-        score = match.find('span', {'class': 'score'}).get_text(strip=True)
+    # Extract teams
+    team_elements = match.find_all('span', {'class': 'swap-text__target'})
+    if len(team_elements) == 2:
+        home_team = team_elements[0].get_text(strip=True)
+        away_team = team_elements[1].get_text(strip=True)
+    else:
+        home_team, away_team = 'Unknown', 'Unknown'
 
-        # Append the data to the lists
-        teams.append(f"{team1} vs {team2}")
-        scores.append(score)
+    # Extract score
+    score_element = match.find('span', {'class': 'matches__teamscores-side'})
+    score = score_element.get_text(strip=True) if score_element else 'N/A'
 
+    # Append the data to the lists
+    dates.append(date)
+    teams.append(f"{home_team} vs {away_team}")
+    scores.append(score)
 
 # Create a DataFrame to organize the data
 data = {
@@ -47,10 +60,10 @@ data = {
     'Teams': teams,
     'Score': scores
 }
-#df = pd.DataFrame(data)
+df = pd.DataFrame(data)
 
 # Print the results
-#print(df)
+print(df)
 
 # Optionally, save the data to a CSV file
 #df.to_csv('la_liga_results.csv', index=False)
