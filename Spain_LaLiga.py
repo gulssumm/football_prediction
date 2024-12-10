@@ -28,7 +28,10 @@ matches = soup.find_all('div', {'class': 'fixres__item'})
 
 # Initialize empty lists to store the extracted data
 dates = []
-teams = []
+home_teams = []
+away_teams = []
+home_scores = []
+away_scores = []
 scores = []
 
 # Loop through each match section and extract details
@@ -46,19 +49,23 @@ for match in matches:
         home_team, away_team = 'Unknown', 'Unknown'
 
     # Extract score
-    score_element = match.find('span', {'class': 'matches__teamscores-side'})
+    score_element = match.find('span', {'class': 'matches__item-col matches__status'})
     score = score_element.get_text(strip=True) if score_element else 'N/A'
 
     # Append the data to the lists
     dates.append(date)
-    teams.append(f"{home_team} vs {away_team}")
+    home_teams.append(home_team)
+    away_teams.append(away_team)
     scores.append(score)
+    #home_scores.append(home_score)
+    #away_scores.append(away_score)
 
 # Create a DataFrame to organize the data
 data = {
     'Date': dates,
-    'Teams': teams,
-    'Score': scores
+    'Home Team': home_team,
+    'Away Team': away_team,
+    'Score': score
 }
 df = pd.DataFrame(data)
 
