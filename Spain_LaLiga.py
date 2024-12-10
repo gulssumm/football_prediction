@@ -22,18 +22,18 @@ home_scores = []
 away_scores = []
 
 # Get all headers and their following matches
-sections = driver.find_elements(By.XPATH, "//h3[contains(@class, 'fixres__header1')]/..")
+sections = driver.find_elements(By.XPATH, "//div[contains(@class, 'fixres__body')]/..")
 
 # Loop through each section
 for section in sections:
-    # Extract the date from the header
-    date_header = section.find_element(By.CLASS_NAME, 'fixres__header1')
-    date = date_header.text.strip()
-
     # Find all matches under this section
     match_elements = section.find_elements(By.CLASS_NAME, 'fixres__item')
 
     for match in match_elements:
+        # Extract the date from the header
+        date_header = section.find_element(By.CLASS_NAME, 'fixres__header1')
+        date = date_header.text.strip()
+        
         # Extract teams
         try:
             team_elements = match.find_elements(By.CLASS_NAME, 'swap-text__target')
