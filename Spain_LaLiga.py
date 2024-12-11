@@ -15,25 +15,34 @@ driver.get(url)
 driver.implicitly_wait(5)
 
 # Initialize empty lists to store the extracted data
+leagues = []
 dates = []
 home_teams = []
 away_teams = []
 home_scores = []
 away_scores = []
 
-# Get all headers and their following matches
+
+# Extract league name (assume it's a global header)
+try:
+    league_header = driver.find_element(By.CLASS_NAME, 'swap-text__target')
+    league = league_header.text.strip()
+except:
+    league = 'Unknown'
+
+# Get all sections containing headers and matches
 sections = driver.find_elements(By.XPATH, "//div[contains(@class, 'fixres__body')]/..")
 
 # Loop through each section
 for section in sections:
+       date_headers = driver.find_elements(By.XPATH, "//h3[contains(@class, 'fixres__header1')]")
+for i, header in enumerate(date_headers):
+    date = driver.execute_script("return arguments[0].textContent;", header).strip() or "Unknown"
+    
     # Find all matches under this section
     match_elements = section.find_elements(By.CLASS_NAME, 'fixres__item')
 
     for match in match_elements:
-        # Extract the date from the header
-        date_header = section.find_element(By.CLASS_NAME, 'fixres__header1')
-        date = date_header.text.strip()
-
         # Extract teams
         try:
             team_elements = match.find_elements(By.CLASS_NAME, 'swap-text__target')
@@ -51,6 +60,7 @@ for section in sections:
             home_score, away_score = 'N/A', 'N/A'
 
         # Append the data to the lists
+        leagues.append(league)
         dates.append(date)
         home_teams.append(home_team)
         away_teams.append(away_team)
@@ -62,6 +72,7 @@ driver.quit()
 
 # Create a DataFrame to organize the data
 data = {
+    'League': leagues,
     'Date': dates,
     'Home Team': home_teams,
     'Away Team': away_teams,
@@ -71,7 +82,7 @@ data = {
 df = pd.DataFrame(data)
 
 # Print the results
-print(df)
+#print(df)
 
 # Optionally, save the data to a CSV file
-#df.to_csv('la_liga_results.csv', index=False)
+df.to_csv('2000_01_SP_laliga.csv', index=False)
