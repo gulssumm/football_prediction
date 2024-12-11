@@ -7,12 +7,8 @@ options = webdriver.ChromeOptions()
 options.add_argument("--headless")  # Run in headless mode (optional)
 driver = webdriver.Chrome(options=options)
 
-# URL of the page you want to scrape
-url = 'https://www.skysports.com/la-liga-results/2000-01'
-driver.get(url)
-
-# Let the page load completely
-driver.implicitly_wait(5)
+# File containing all URLs (one per line)
+url_file = "urls_SP_LaLiga.txt"
 
 # Initialize empty lists to store the extracted data
 leagues = []
@@ -22,50 +18,63 @@ away_teams = []
 home_scores = []
 away_scores = []
 
+# Read URLs from the file
+with open(url_file, "r") as file:
+    urls = file.readlines()
 
-# Extract league name (assume it's a global header)
-try:
-    league_header = driver.find_element(By.CLASS_NAME, 'swap-text__target')
-    league = league_header.text.strip()
-except:
-    league = 'Unknown'
+# Loop through each URL and scrape the data
+for url in urls:
+    url = url.strip()  # Remove any leading/trailing whitespace
+    if not url:
+        continue  # Skip empty lines
 
-# Get all sections containing headers and matches
-sections = driver.find_elements(By.XPATH, "//div[contains(@class, 'fixres__body')]/..")
+    # Open the URL
+    driver.get(url)
+    driver.implicitly_wait(5)  # Wait for the page to load
 
-# Loop through each section
-for section in sections:
-       date_headers = driver.find_elements(By.XPATH, "//h3[contains(@class, 'fixres__header1')]")
-for i, header in enumerate(date_headers):
-    date = driver.execute_script("return arguments[0].textContent;", header).strip() or "Unknown"
-    
-    # Find all matches under this section
-    match_elements = section.find_elements(By.CLASS_NAME, 'fixres__item')
+    # Extract league name (assume it's a global header)
+    try:
+        league_header = driver.find_element(By.CLASS_NAME, 'swap-text__target')
+        league = league_header.text.strip()
+    except:
+        league = 'Unknown'
 
-    for match in match_elements:
-        # Extract teams
-        try:
-            team_elements = match.find_elements(By.CLASS_NAME, 'swap-text__target')
-            home_team = team_elements[0].text if len(team_elements) > 0 else 'Unknown'
-            away_team = team_elements[1].text if len(team_elements) > 1 else 'Unknown'
-        except:
-            home_team, away_team = 'Unknown', 'Unknown'
+    # Get all sections containing headers and matches
+    sections = driver.find_elements(By.XPATH, "//div[contains(@class, 'fixres__body')]/..")
 
-        # Extract scores
-        try:
-            score_elements = match.find_elements(By.CLASS_NAME, 'matches__teamscores-side')
-            home_score = score_elements[0].text if len(score_elements) > 0 else 'N/A'
-            away_score = score_elements[1].text if len(score_elements) > 1 else 'N/A'
-        except:
-            home_score, away_score = 'N/A', 'N/A'
+    # Loop through each section
+    for section in sections:
+        date_headers = driver.find_elements(By.XPATH, "//h3[contains(@class, 'fixres__header1')]")
+        for i, header in enumerate(date_headers):
+            date = driver.execute_script("return arguments[0].textContent;", header).strip() or "Unknown"
 
-        # Append the data to the lists
-        leagues.append(league)
-        dates.append(date)
-        home_teams.append(home_team)
-        away_teams.append(away_team)
-        home_scores.append(home_score)
-        away_scores.append(away_score)
+            # Find all matches under this section
+            match_elements = section.find_elements(By.CLASS_NAME, 'fixres__item')
+
+            for match in match_elements:
+                # Extract teams
+                try:
+                    team_elements = match.find_elements(By.CLASS_NAME, 'swap-text__target')
+                    home_team = team_elements[0].text if len(team_elements) > 0 else 'Unknown'
+                    away_team = team_elements[1].text if len(team_elements) > 1 else 'Unknown'
+                except:
+                    home_team, away_team = 'Unknown', 'Unknown'
+
+                # Extract scores
+                try:
+                    score_elements = match.find_elements(By.CLASS_NAME, 'matches__teamscores-side')
+                    home_score = score_elements[0].text if len(score_elements) > 0 else 'N/A'
+                    away_score = score_elements[1].text if len(score_elements) > 1 else 'N/A'
+                except:
+                    home_score, away_score = 'N/A', 'N/A'
+
+                # Append the data to the lists
+                leagues.append(league)
+                dates.append(date)
+                home_teams.append(home_team)
+                away_teams.append(away_team)
+                home_scores.append(home_score)
+                away_scores.append(away_score)
 
 # Close the driver after scraping
 driver.quit()
@@ -81,8 +90,7 @@ data = {
 }
 df = pd.DataFrame(data)
 
-# Print the results
-#print(df)
+# Save the results to a CSV file
+df.to_csv('2000_02_SP_laliga.csv', index=False)
 
-# Optionally, save the data to a CSV file
-df.to_csv('2000_01_SP_laliga.csv', index=False)
+print("Data scraping complete. Results saved to 2000_02_SP_laliga.csv")
