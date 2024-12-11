@@ -91,6 +91,6 @@ data = {
 df = pd.DataFrame(data)
 
 # Save the results to a CSV file
-df.to_csv('2000_02_SP_laliga.csv', index=False)
+df.to_csv('2000_24_SP_laliga.csv', index=False)
 
-print("Data scraping complete. Results saved to 2000_02_SP_laliga.csv")
+print("Data scraping complete. Results saved to 2000_24_SP_laliga.csv")
