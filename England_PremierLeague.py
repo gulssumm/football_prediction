@@ -3,19 +3,20 @@ from selenium.webdriver.common.by import By
 import pandas as pd
 import os
 
+# File path for URLs
 file_path = 'c:\\Users\\Lenovo\\Desktop\\FutboolMatch\\urls.txt'
+
+# Check if the file exists
 if os.path.exists(file_path):
     with open(file_path, 'r') as file:
         urls = [line.strip() for line in file.readlines()]
 else:
     print(f"File not found: {file_path}")
 
-
 # Set up Selenium WebDriver
 options = webdriver.ChromeOptions()
 options.add_argument("--headless")  # Run in headless mode (optional)
 driver = webdriver.Chrome(options=options)
-
 
 # Initialize empty lists to store the extracted data
 all_leagues = []
@@ -42,9 +43,16 @@ for url in urls:
     sections = driver.find_elements(By.XPATH, "//div[contains(@class, 'fixres__body')]/..")
 
     for section in sections:
-        date_headers = driver.find_elements(By.XPATH, "//h3[contains(@class, 'fixres__header1')]")
-        for header in date_headers:
-            date = driver.execute_script("return arguments[0].textContent;", header).strip() or "Unknown"
+        # Extract the main date (e.g., May 2001)
+        date_headers = section.find_elements(By.XPATH, ".//h3[contains(@class, 'fixres__header1')]")
+        detailed_date_headers = section.find_elements(By.XPATH, ".//h4[contains(@class, 'fixres__header2')]")
+        
+        for header, detailed_header in zip(date_headers, detailed_date_headers):
+            main_date = driver.execute_script("return arguments[0].textContent;", header).strip() or "Unknown"
+            detailed_date = driver.execute_script("return arguments[0].textContent;", detailed_header).strip() or "Unknown"
+            
+            # Combine main date and detailed date
+            combined_date = f"{main_date}, {detailed_date}"
 
             # Find all matches under this section
             match_elements = section.find_elements(By.CLASS_NAME, 'fixres__item')
@@ -68,7 +76,7 @@ for url in urls:
 
                 # Append the data to the lists
                 all_leagues.append(league)
-                all_dates.append(date)
+                all_dates.append(combined_date)
                 all_home_teams.append(home_team)
                 all_away_teams.append(away_team)
                 all_home_scores.append(home_score)
@@ -88,7 +96,10 @@ data = {
 }
 df = pd.DataFrame(data)
 
-# Save the data to a CSV file
+# Print the results to the terminal for testing
+print(df)
+
+# Optionally, save the data to a CSV file
 df.to_csv('premier_league_results_all_seasons.csv', index=False)
 
 print("Data scraping completed successfully!")
