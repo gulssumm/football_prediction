@@ -20,22 +20,21 @@ try:
     league_name = driver.find_element(By.CLASS_NAME, "direct-headline__link").text.strip()
 
     # Extract teams and score
-    teams = driver.find_elements(By.CLASS_NAME, "vereinprofil_tooltip")
+    teams = driver.find_elements(By.CLASS_NAME, "box")
     home_team = teams[0].text.strip()
     away_team = teams[1].text.strip()
     score = driver.find_element(By.CLASS_NAME, "sb-endstand").text.strip()
 
     # Extract match date
-    date_element = driver.find_element(By.CLASS_NAME, "sb-datum").text.strip()
+    date_element = driver.find_element(By.CLASS_NAME, "sb-datum hide-for-small").text.strip()
 
     # Extract lineups (players and manager)
-    lineups = driver.find_elements(By.CLASS_NAME, "aufstellung-spieler-container")
-    home_lineup = lineups[0]
-    away_lineup = lineups[1]
+    home_lineup = driver.find_elements(By.CLASS_NAME, "large-6 columns aufstellung-box")
+    away_lineup = driver.find_elements(By.CLASS_NAME, "large-6 columns")
 
     def extract_players(lineup):
         # Group players by positions
-        positions = ["goalkeeper", "defense", "midfield", "attack"]
+        positions = ["goalkeeper", "defense", "midfield", "forwards"]
         players = {position: [] for position in positions}
 
         for position in positions:
