@@ -16,16 +16,27 @@ url = "https://www.transfermarkt.com/real-sociedad_racing-santander/index/spielb
 driver.get(url)
 
 # Step 2: Define functions to extract data
-def get_element_text(selector_type, value):
+def get_element_text(selector_type, value, attribute=None):
     try:
         if selector_type == "xpath":
-            return driver.find_element(By.XPATH, value).text
+            element = driver.find_element(By.XPATH, value)
+            # Eğer attribute verilmişse, attribute değerini al
+            if attribute:
+                return element.get_attribute(attribute)
+            # Eğer attribute verilmemişse, text değerini al
+            else:
+                return element.text
         elif selector_type == "class":
-            return driver.find_element(By.CLASS_NAME, value).text
+            element = driver.find_element(By.CLASS_NAME, value)
+            # Eğer attribute verilmişse, attribute değerini al
+            if attribute:
+                return element.get_attribute(attribute)
+            # Eğer attribute verilmemişse, text değerini al
+            else:
+                return element.text
     except Exception as e:
         print(f"Error: {e}")
         return None
-
 # Step 3: Wait for elements to be loaded (use explicit waits)
 wait = WebDriverWait(driver, 10)  # Wait for a maximum of 10 seconds
 
@@ -39,6 +50,7 @@ league_name = get_element_text("xpath", "//span/a")
 home_team = get_element_text("xpath", "//div[@class='sb-team sb-heim']//a[2]")
 away_team = get_element_text("xpath", "//div[@class='sb-team sb-gast']//a[2]")
 score = get_element_text("xpath", "//div[@class='sb-endstand']")
+referee = get_element_text("xpath", "//p[@class='sb-zusatzinfos']//a[1]","title")
 
 # Match date
 match_date = get_element_text("xpath", "//div[contains(@class, 'sb-spieldaten')]//a[2]")
@@ -67,6 +79,7 @@ print("League Name:", league_name)
 print("Home Team:", home_team)
 print("Away Team:", away_team)
 print("Score:", score)
+print("Referee:", referee)
 print("Match Date:", match_date)
 print("Home Goalkeeper:", home_goalkeeper)
 print("Defenders:", home_defender)
