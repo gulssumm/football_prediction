@@ -1,6 +1,8 @@
 from selenium import webdriver
-from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 
 # Set up Chrome WebDriver (ensure you have ChromeDriver installed)
 chrome_options = Options()
@@ -8,74 +10,70 @@ chrome_options = Options()
 chrome_options.add_argument("--disable-gpu")
 chrome_options.add_argument("--no-sandbox")
 
-# Update the path to your ChromeDriver
+# Step 1: Set up the WebDriver
 driver = webdriver.Chrome(options=chrome_options)
+url = "https://www.transfermarkt.com/real-sociedad_racing-santander/index/spielbericht/1089930"
+driver.get(url)
 
-try:
-    # URL of the match page
-    url = "https://www.transfermarkt.com/real-sociedad_racing-santander/index/spielbericht/1089930"
-    driver.get(url)
+# Step 2: Define functions to extract data
+def get_element_text(selector_type, value):
+    try:
+        if selector_type == "xpath":
+            return driver.find_element(By.XPATH, value).text
+        elif selector_type == "class":
+            return driver.find_element(By.CLASS_NAME, value).text
+    except Exception as e:
+        print(f"Error: {e}")
+        return None
 
-    # Extract league name
-    league_name = driver.find_element(By.CLASS_NAME, "direct-headline__link").text.strip()
+# Step 3: Wait for elements to be loaded (use explicit waits)
+wait = WebDriverWait(driver, 10)  # Wait for a maximum of 10 seconds
 
-    # Extract teams and score
-    teams = driver.find_elements(By.CLASS_NAME, "box")
-    home_team = teams[0].text.strip()
-    away_team = teams[1].text.strip()
-    score = driver.find_element(By.CLASS_NAME, "sb-endstand").text.strip()
+# Wait for the teams and score to load
+wait.until(EC.presence_of_element_located((By.XPATH, "//div[@class='sb-team sb-heim']//a[2]")))
 
-    # Extract match date
-    date_element = driver.find_element(By.CLASS_NAME, "sb-datum hide-for-small").text.strip()
+# League name
+league_name = get_element_text("xpath", "//span/a")
 
-    # Extract lineups (players and manager)
-    home_lineup = driver.find_elements(By.CLASS_NAME, "large-6 columns aufstellung-box")
-    away_lineup = driver.find_elements(By.CLASS_NAME, "large-6 columns")
+# Teams and score
+home_team = get_element_text("xpath", "//div[@class='sb-team sb-heim']//a[2]")
+away_team = get_element_text("xpath", "//div[@class='sb-team sb-gast']//a[2]")
+score = get_element_text("xpath", "//div[@class='sb-endstand']")
 
-    def extract_players(lineup):
-        # Group players by positions
-        positions = ["goalkeeper", "defense", "midfield", "forwards"]
-        players = {position: [] for position in positions}
+# Match date
+match_date = get_element_text("xpath", "//div[contains(@class, 'sb-spieldaten')]//a[2]")
 
-        for position in positions:
-            try:
-                position_section = lineup.find_element(By.CLASS_NAME, f"sb-formation-{position}")
-                player_elements = position_section.find_elements(By.CLASS_NAME, "spielprofil_tooltip")
-                players[position] = [player.text.strip() for player in player_elements]
-            except Exception:
-                players[position] = []
+# Extract players by position
+def get_players_by_position(position_xpath):
+    try:
+        players = driver.find_elements(By.XPATH, position_xpath)
+        return [player.text for player in players if player.text]
+    except Exception as e:
+        print(f"Error: {e}")
+        return []
 
-        # Extract manager
-        try:
-            manager_section = lineup.find_element(By.CLASS_NAME, "sb-formation-trainer")
-            manager = manager_section.find_element(By.CLASS_NAME, "spielprofil_tooltip").text.strip()
-        except Exception:
-            manager = None
+# Home Goalkeeper
+home_goalkeeper = get_players_by_position("//div[@class='large-12 columns']//table//tbody//tr//td[2]//a")
+home_defender = get_players_by_position("//div[@class='large-12 columns']//table//tbody//tr[2]//td[2]//a")
+home_midfielder = get_players_by_position("//div[@class='large-12 columns']//table//tbody//tr[3]//td[2]//a")
+home_forward = get_players_by_position("//div[@class='large-12 columns']//table//tbody//tr[4]//td[2]//a")
 
-        return players, manager
+# Wait and Extract Managers
+home_manager = get_element_text("xpath", "//div[@class='large-12 columns']//table//tbody//tr[5]//td[2]//a")
+away_manager = get_element_text("xpath", "//div[@class='large-6 columns']//table//tbody//tr[5]//td[2]//a")
 
-    home_players, home_manager = extract_players(home_lineup)
-    away_players, away_manager = extract_players(away_lineup)
+# Step 4: Print the data
+print("League Name:", league_name)
+print("Home Team:", home_team)
+print("Away Team:", away_team)
+print("Score:", score)
+print("Match Date:", match_date)
+print("Home Goalkeeper:", home_goalkeeper)
+print("Defenders:", home_defender)
+print("Midfielders:", home_midfielder)
+print("Forwards:", home_forward)
+print("Home Manager:", home_manager)
+print("Away Manager:", away_manager)
 
-    # Print the results
-    print("League Name:", league_name)
-    print("Match Date:", date_element)
-    print("Home Team:", home_team)
-    print("Away Team:", away_team)
-    print("Score:", score)
-    print("\nHome Team Lineup:")
-    print("Goalkeeper:", home_players["goalkeeper"])
-    print("Defenders:", home_players["defense"])
-    print("Midfielders:", home_players["midfield"])
-    print("Forwards:", home_players["attack"])
-    print("Manager:", home_manager)
-    print("\nAway Team Lineup:")
-    print("Goalkeeper:", away_players["goalkeeper"])
-    print("Defenders:", away_players["defense"])
-    print("Midfielders:", away_players["midfield"])
-    print("Forwards:", away_players["attack"])
-    print("Manager:", away_manager)
-
-finally:
-    # Close the driver
-    driver.quit()
+# Step 5: Close the browser
+driver.quit()
