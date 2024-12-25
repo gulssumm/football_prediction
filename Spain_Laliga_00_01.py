@@ -59,7 +59,6 @@ try:
 except TimeoutException as e:
     print("Timeout while waiting for the referee element.")
     referee = "N/A"
-#referee = get_element_text("xpath", "//p[@class='sb-zusatzinfos']//a[1]","title")
 
 # Match date
 match_date = get_element_text("xpath", "//div[contains(@class, 'sb-spieldaten')]//a[2]")
@@ -93,7 +92,6 @@ print("League Name:", league_name)
 print("Home Team:", home_team)
 print("Away Team:", away_team)
 print("Score:", score)
-print("Referee:", referee)
 print("Match Date:", match_date)
 print("Goalkeeper:", home_goalkeeper)
 print("Defenders:", home_defender)
