@@ -70,9 +70,14 @@ home_defender = get_players_by_position("//div[@class='large-12 columns']//table
 home_midfielder = get_players_by_position("//div[@class='large-12 columns']//table//tbody//tr[3]//td[2]//a")
 home_forward = get_players_by_position("//div[@class='large-12 columns']//table//tbody//tr[4]//td[2]//a")
 
-# Wait and Extract Managers
-home_manager = get_element_text("xpath", "//div[@class='large-12 columns']//table//tbody//tr[5]//td[2]//a")
-away_manager = get_element_text("xpath", "//div[@class='large-6 columns']//table//tbody//tr[5]//td[2]//a")
+# Ensure elements are loaded
+home_manager = WebDriverWait(driver, 10).until(
+    EC.visibility_of_element_located((By.XPATH, "//div[@class='large-12 columns']//table//tbody//tr[5]//td[2]//a"))
+).text
+
+away_manager = WebDriverWait(driver, 10).until(
+    EC.visibility_of_element_located((By.XPATH, "//div[@class='large-6 columns']//table//tbody//tr[5]//td[2]//a"))
+).text
 
 # Step 4: Print the data
 print("League Name:", league_name)
