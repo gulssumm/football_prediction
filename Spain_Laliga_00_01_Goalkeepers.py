@@ -50,7 +50,7 @@ defender_elements = soup.find_all('td', string="Defenders")
 if defender_elements:
     first_defender = defender_elements[0].find_next('td').get_text(strip=True)
     second_defender = defender_elements[1].find_next('td').get_text(strip=True)
-    print(f"First Defender: {first_defender}")
-    print(f"Second Defender: {second_defender}")
+    print(f"First Defenders: {first_defender}")
+    print(f"Second Defenders: {second_defender}")
 else:
     print("Defender not found.")
