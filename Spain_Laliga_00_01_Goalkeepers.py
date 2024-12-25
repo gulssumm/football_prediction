@@ -42,3 +42,15 @@ if goalkeeper_elements:
     print(f"Second Goalkeeper: {second_goalkeeper}")
 else:
     print("Goalkeeper not found.")
+
+# Find defenders (searching for rows containing 'Defender' in the team lineup section)
+defender_elements = soup.find_all('td', string="Defenders")
+
+# Extract names of defenders
+if defender_elements:
+    first_defender = defender_elements[0].find_next('td').get_text(strip=True)
+    second_defender = defender_elements[1].find_next('td').get_text(strip=True)
+    print(f"First Defender: {first_defender}")
+    print(f"Second Defender: {second_defender}")
+else:
+    print("Defender not found.")
