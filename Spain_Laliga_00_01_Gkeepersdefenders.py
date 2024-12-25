@@ -27,6 +27,32 @@ def extract_team_info(url):
     # Parse the HTML content using BeautifulSoup
     soup = BeautifulSoup(html_content, 'html.parser')
 
+    # Extract League Name
+    league_name = soup.find('a', class_='direct-headline__link').get_text(strip=True)
+
+    # Extract Match Date
+    match_date_ = soup.find('p', class_='sb-datum hide-for-small').find_all('a')
+    if len(match_date_) > 1:
+        match_date = match_date_[1].get_text(strip=True)  # Get date in format (e.g. Sat, 9/9/00)
+    else:
+        match_date = "Date not found"
+
+
+    # Extract Home and Away Teams
+    home_team = soup.find('a', class_='sb-vereinslink').get_text(strip=True)
+    away_team = soup.find('div', class_='sb-team sb-gast').find('a').get_text(strip=True)
+
+    # Extract Referee
+    referee_tag = soup.find('p', class_='sb-zusatzinfos').find('a', title=True)
+    referee = referee_tag.get_text(strip=True) if referee_tag else "N/A"
+
+    # Print the extracted information
+    print(f"League Name: {league_name}")
+    print(f"Match Date: {match_date}")
+    print(f"Home Team: {home_team}")
+    print(f"Away Team: {away_team}")
+    print(f"Referee: {referee}")
+
     # Function to extract player roles
     def extract_players(role):
         elements = soup.find_all('td', string=role)
