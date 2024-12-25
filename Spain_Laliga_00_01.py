@@ -3,6 +3,7 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import TimeoutException
 
 # Set up Chrome WebDriver (ensure you have ChromeDriver installed)
 chrome_options = Options()
@@ -50,7 +51,15 @@ league_name = get_element_text("xpath", "//span/a")
 home_team = get_element_text("xpath", "//div[@class='sb-team sb-heim']//a[2]")
 away_team = get_element_text("xpath", "//div[@class='sb-team sb-gast']//a[2]")
 score = get_element_text("xpath", "//div[@class='sb-endstand']")
-referee = get_element_text("xpath", "//p[@class='sb-zusatzinfos']//a[1]","title")
+try:
+    referee_element = WebDriverWait(driver, 10).until(
+        EC.visibility_of_element_located((By.XPATH, "//p[@class='sb-zusatzinfos']//a[1]"))
+    )
+    referee = referee_element.get_attribute("title")
+except TimeoutException as e:
+    print("Timeout while waiting for the referee element.")
+    referee = "N/A"
+#referee = get_element_text("xpath", "//p[@class='sb-zusatzinfos']//a[1]","title")
 
 # Match date
 match_date = get_element_text("xpath", "//div[contains(@class, 'sb-spieldaten')]//a[2]")
@@ -65,10 +74,10 @@ def get_players_by_position(position_xpath):
         return []
 
 # Home Goalkeeper
-home_goalkeeper = get_players_by_position("//div[@class='large-12 columns']//table//tbody//tr//td[2]//a")
-home_defender = get_players_by_position("//div[@class='large-12 columns']//table//tbody//tr[2]//td[2]//a")
-home_midfielder = get_players_by_position("//div[@class='large-12 columns']//table//tbody//tr[3]//td[2]//a")
-home_forward = get_players_by_position("//div[@class='large-12 columns']//table//tbody//tr[4]//td[2]//a")
+home_goalkeeper = get_players_by_position("//div[@class='box']//table//tbody//tr[1]//td[2]//a")
+home_defender = get_players_by_position("//div[@class='large-12 columns']//table//tbody//tr[2]//td[2]")
+home_midfielder = get_players_by_position("//div[@class='large-12 columns']//table//tbody//tr[3]//td[2]")
+home_forward = get_players_by_position("//div[@class='large-12 columns']//table//tbody//tr[4]//td[2]")
 
 # Ensure elements are loaded
 home_manager = WebDriverWait(driver, 10).until(
@@ -86,7 +95,7 @@ print("Away Team:", away_team)
 print("Score:", score)
 print("Referee:", referee)
 print("Match Date:", match_date)
-print("Home Goalkeeper:", home_goalkeeper)
+print("Goalkeeper:", home_goalkeeper)
 print("Defenders:", home_defender)
 print("Midfielders:", home_midfielder)
 print("Forwards:", home_forward)
