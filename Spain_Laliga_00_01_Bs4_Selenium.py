@@ -3,10 +3,11 @@ from selenium.webdriver.chrome.options import Options
 import time
 from bs4 import BeautifulSoup
 import csv
-
+import re
 
 def extract_team_info(url):
     # Setup Chrome options
+    global score
     chrome_options = Options()
     chrome_options.add_argument("--headless")  # Run Chrome in headless mode (no GUI)
 
@@ -40,6 +41,13 @@ def extract_team_info(url):
     away_team_ = soup.find('div', class_='sb-team sb-gast').find_all('a')
     away_team = away_team_[1].get_text(strip=True) if len(away_team_) > 1 else "Away team not found"
 
+    # Extract Full-Time Score (Ignore Halftime)
+    score_div = soup.find('div', class_='sb-endstand')
+    if score_div:
+        full_text = score_div.text
+        score = full_text.split('(')[0].strip()  # Keep only the part before '(' and strip any whitespace
+        print(score)
+
     # Extract Referee
     referee_tag = soup.find('p', class_='sb-zusatzinfos').find('a', title=True)
     referee = referee_tag.get_text(strip=True) if referee_tag else "N/A"
@@ -62,9 +70,9 @@ def extract_team_info(url):
 
     # Return extracted data as a dictionary
     return {
-        "URL": url,
         "League Name": league_name,
         "Match Date": match_date,
+        "Score": f'"{score}"',
         "Home Team": home_team,
         "Away Team": away_team,
         "Referee": referee,
@@ -85,18 +93,20 @@ def extract_team_info(url):
 start_url = "https://www.transfermarkt.com/real-sociedad_racing-santander/index/spielbericht/1089930"
 end_url = "https://www.transfermarkt.com/real-sociedad_racing-santander/index/spielbericht/1089939"
 start_id = int(start_url.split('/')[-1])
+print(start_id)
 end_id = int(end_url.split('/')[-1])
+print(end_id)
 
 # List of URLs
 urls = [f"https://www.transfermarkt.com/real-sociedad_racing-santander/index/spielbericht/{id_}" for id_ in range(start_id, end_id + 1)]
 
 # CSV file to save the data
-output_file = "match_data.csv"
+output_file = "SP_Laliga_00_01_1.csv"
 
 # Write data to CSV
 with open(output_file, mode='w', newline='', encoding='utf-8') as file:
     writer = csv.DictWriter(file, fieldnames=[
-        "URL", "League Name", "Match Date", "Home Team", "Away Team", "Referee",
+        "League Name", "Match Date", "Score", "Home Team", "Away Team", "Referee",
         "Home Goalkeeper", "Away Goalkeeper", "Home Defender", "Away Defender",
         "Home Midfielder", "Away Midfielder", "Home Forward", "Away Forward",
         "Home Manager", "Away Manager"
