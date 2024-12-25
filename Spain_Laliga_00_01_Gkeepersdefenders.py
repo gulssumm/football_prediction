@@ -40,7 +40,12 @@ def extract_team_info(url):
 
     # Extract Home and Away Teams
     home_team = soup.find('a', class_='sb-vereinslink').get_text(strip=True)
-    away_team = soup.find('div', class_='sb-team sb-gast').find('a').get_text(strip=True)
+    away_team_ = soup.find('div', class_='sb-team sb-gast').find_all('a')
+    if len(away_team_) > 1:
+        away_team = away_team_[1].get_text(strip=True)
+    else:
+        away_team = "Away team not found"
+
 
     # Extract Referee
     referee_tag = soup.find('p', class_='sb-zusatzinfos').find('a', title=True)
