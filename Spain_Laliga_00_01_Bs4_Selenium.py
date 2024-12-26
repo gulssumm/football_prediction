@@ -3,7 +3,6 @@ from selenium.webdriver.chrome.options import Options
 import time
 from bs4 import BeautifulSoup
 import csv
-import re
 
 def extract_team_info(url):
     # Setup Chrome options
