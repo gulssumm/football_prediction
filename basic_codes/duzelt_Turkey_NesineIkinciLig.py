@@ -4,7 +4,7 @@ from selenium.webdriver.common.by import By
 import time
 
 # File containing URLs with placeholders for ID and {i}
-input_file = "urls2.txt"
+input_file = "../basic_codes/URLS/urls2.txt"
 # Output CSV file
 csv_file = "2000_24_TR_nesineikincilig.csv"
 
@@ -33,7 +33,7 @@ with open(csv_file, mode="w", newline="", encoding="utf-8-sig") as file:
 
             try:
                 # Find the league name
-                league_element = driver.find_element(By.XPATH, "/html/body/form/div[4]/div/section[2]/article[2]/div[1]/b/i/a")
+                league_element = driver.find_element(By.XPATH, "/html/body/form/div[4]/div/section[2]/article[2]/div[1]/table/tbody/tr[1]/td/div")
                 league_name = league_element.text.strip()
 
                 # Find all home team elements
@@ -53,13 +53,13 @@ with open(csv_file, mode="w", newline="", encoding="utf-8-sig") as file:
                 away_team_names = [away_team.text.strip() for away_team in away_teams]
 
                 # Ensure each home team aligns with its respective date
-                for home_team, match_date, score_1, away_team in zip(home_team_names, match_dates, score_results, away_team_names):
+                for home_team, match_date, score, away_team in zip(home_team_names, match_dates, score_results, away_team_names):
                     # Split score into home_score and away_score
                     try:
-                        home_score, away_score = map(int, score_1.split('-'))  # Convert both parts to integers
+                        home_score, away_score = map(int, score.split('-'))  # Convert both parts to integers
                     except ValueError:
                         # If score is not in "x-y" format, skip this entry
-                        print(f"Skipping invalid score: {score_1}")
+                        print(f"Skipping invalid score: {score}")
                         continue
 
                     # Write data to the CSV
