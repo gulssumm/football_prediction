@@ -45,11 +45,8 @@ def extract_matches(url):
 
     # Extract match data
     matches = []
-    classes = soup.find('div','large-12 columns')  # Rows containing match information
-    sub_classes = classes.find('div', 'large-6 columns')
-    table_class = sub_classes.find('table')
-    tbody = table_class.find('tbody')
-    rows = tbody.find_all('tr')
+    classes = soup.find('div','large-6 columns')
+    rows = classes.find_all('tr')
     for row in rows:
         try:
             # Extract date
