@@ -4,7 +4,7 @@ import pandas as pd
 import os
 
 # File path for URLs
-file_path = 'c:\\Users\\Lenovo\\Desktop\\FutboolMatch\\urls.txt'
+file_path = '../basic_codes/URLS/urls_EN_PremierLeague.txt'
 
 # Check if the file exists
 if os.path.exists(file_path):
@@ -100,6 +100,6 @@ df = pd.DataFrame(data)
 print(df)
 
 # Optionally, save the data to a CSV file
-df.to_csv('premier_league_results_all_seasons.csv', index=False)
+df.to_csv('2000_24_EN_Premierleague.csv', index=False)
 
 print("Data scraping completed successfully!")
