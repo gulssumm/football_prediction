@@ -4,7 +4,7 @@ import pandas as pd
 import os
 
 # File path for URLs
-file_path = '../basic_codes/URLS/urls_EN_PremierLeague.txt'
+file_path = 'C:/Users/Lenovo/football_prediction/basic_codes/URLS'
 
 # Check if the file exists
 if os.path.exists(file_path):
@@ -27,7 +27,7 @@ all_home_scores = []
 all_away_scores = []
 
 # Loop through each URL
-for url in urls:
+for url in file_path:
     print(f"Scraping data from: {url}")
     driver.get(url)
     driver.implicitly_wait(5)
@@ -100,6 +100,6 @@ df = pd.DataFrame(data)
 print(df)
 
 # Optionally, save the data to a CSV file
-df.to_csv('2000_24_EN_Premierleague.csv', index=False)
+df.to_csv('2000_24_EN_ChampionshipLeague.csv', index=False)
 
 print("Data scraping completed successfully!")
