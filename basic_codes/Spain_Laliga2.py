@@ -1,3 +1,4 @@
+import re
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 import time
@@ -6,6 +7,26 @@ import csv
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+
+# Function to clean team names
+def clean_team_name(name):
+    if name:
+        return re.sub(r"\(\d+\.\)", "", name).strip()  # Remove ranking indicators like "(4.)"
+    return None
+
+
+# Function to clean the score
+def clean_score(score):
+    # Check if score is None or not a string, return as is if so
+    if not score or not isinstance(score, str):
+        return score
+
+    # If the score looks like a timestamp (e.g., "1:00:00 AM"), convert it to "1:0"
+    if re.match(r'^\d{1,2}:\d{2}:\d{2} [APM]{2}$', score):
+        parts = score.split(":")
+        return f"{parts[0]}:{parts[1]}"
+
+    return score  # Return the score as is if no match
 
 # Function to extract match information
 def extract_matches(url):
@@ -45,25 +66,26 @@ def extract_matches(url):
 
     # Extract match data
     matches = []
-    classes = soup.find('div','large-6 columns')
-    rows = classes.find_all('tr')
-    for row in rows:
-        try:
-            # Extract date
-            date_td = row.find('td', class_='hide-for-small')
-            date = date_td.find('a').get_text(strip=True) if date_td and date_td.find('a') else "Date not found"
+    # Find the container with the class `large-6 columns`
+    matches_container = soup.find_all('div', class_='large-6 columns')
 
-            # Extract home team
-            home_team_td = row.find('td', class_='text-right no-border-rechts hauptlink')
-            home_team = home_team_td.find('a').get_text(strip=True) if home_team_td and home_team_td.find('a') else "Home team not found"
+    # Iterate through each match container to extract data
+    for container in matches_container:
+        rows = container.find_all('tr', class_=lambda x: x != 'bg_blau_20')  # Exclude headers and separators
+        for row in rows:
+            # Extract data
+            date = row.find('td', class_='hide-for-small')
+            home_team = row.find('td', class_='text-right no-border-rechts hauptlink')
+            away_team = row.find('td', class_='no-border-links hauptlink')
+            score_element = row.find('td', class_='zentriert hauptlink')
 
-            # Extract away team
-            away_team_td = row.find('td', class_='no-border-links hauptlink')
-            away_team = away_team_td.find('a').get_text(strip=True) if away_team_td and away_team_td.find('a') else "Away team not found"
-
-            # Extract score
-            score_td = row.find('td', class_='zentriert hauptlink')
-            score = score_td.find('a', class_='ergebnis-link').get_text(strip=True) if score_td and score_td.find('a',class_='ergebnis-link') else "Score not found"
+            # Clean and extract data
+            date = date.get_text(strip=True) if date else None
+            home_team = clean_team_name(home_team.get_text(strip=True)) if home_team else None
+            away_team = clean_team_name(away_team.get_text(strip=True)) if away_team else None
+            score = score_element.get_text(strip=True) if score_element else None
+            score = clean_score(score)
+            #print(score)
 
             matches.append({
                 "League Name": league_name,
@@ -72,9 +94,6 @@ def extract_matches(url):
                 "Away Team": away_team,
                 "Score": score
             })
-        except AttributeError:
-            # Skip rows with incomplete data
-            continue
     return matches
 
 # Generate URLs dynamically
