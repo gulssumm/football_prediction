@@ -4,7 +4,7 @@ from selenium.webdriver.common.by import By
 import time
 
 # File containing URLs with placeholders for ID and {i}
-input_file = "urls1.txt"
+input_file = "urls_TR_Trendyol1.lig.txt"
 # Output CSV file
 csv_file = "2000_24_TR_birincilig.csv"
 

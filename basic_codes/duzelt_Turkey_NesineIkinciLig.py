@@ -1,74 +1,72 @@
-import csv
 from selenium import webdriver
-from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.options import Options
+from bs4 import BeautifulSoup
+import csv
 import time
 
-# File containing URLs with placeholders for ID and {i}
-input_file = "../basic_codes/URLS/urls2.txt"
-# Output CSV file
-csv_file = "2000_24_TR_nesineikincilig.csv"
+# Function to scrape data using Selenium and BeautifulSoup
+def scrape_matches(url):
+    # Configure Selenium
+    options = Options()
+    options.add_argument("--headless")  # Run in headless mode (optional)
+    options.add_argument("--disable-gpu")
+    driver = webdriver.Chrome(options=options)
 
-# Initialize the Selenium WebDriver
-driver = webdriver.Chrome()  # Ensure ChromeDriver is installed and in PATH
+    # Open the URL
+    driver.get(url)
+    time.sleep(5)  # Wait for the page to fully load (adjust as needed)
 
-# Open the CSV file in write mode
-with open(csv_file, mode="w", newline="", encoding="utf-8-sig") as file:
-    writer = csv.writer(file)
-    # Write the header row
-    writer.writerow(["League Name", "Date", "Home Team", "Home Score", "Away Score", "Away Team"])
+    # Get page source and parse with BeautifulSoup
+    soup = BeautifulSoup(driver.page_source, 'html.parser')
+    driver.quit()
 
-    # Read the URL templates from the text file
-    with open(input_file, mode="r", encoding="utf-8") as url_file:
-        urls = [line.strip() for line in url_file.readlines()]  # Read and strip lines
+    # Parse the data
+    match_data = []
+    weeks = soup.find_all('td', class_='belirginYazi')  # Find the week sections
+    for week in weeks:
+        matches_table = week.find_next('table')  # Get the matches table for the week
+        rows = matches_table.find_all('tr')
 
-    # Loop through each URL template
-    for url_template in urls:
-        for i in range(1, 36):  # Replace {i} with values from 1 to 35
-            url = url_template.replace("{i}", str(i))  # Replace {i} with the current value
-            print(f"Processing URL: {url}")
-            driver.get(url)  # Open the URL in the browser
+        for row in rows:
+            cells = row.find_all('td', class_='altCizgi')  # Find the relevant table cells
+            if len(cells) == 3:  # Ensure it's a valid match row
+                # Extract data from the <a> tags within <td>
+                home_team = cells[0].find('a').text.strip() if cells[0].find('a') else None
+                score = cells[1].text.strip() if cells[1].find('a') else None
+                print(score)
+                away_team = cells[2].find('a').text.strip() if cells[2].find('a') else None
 
-            # Wait for the page to load
-            time.sleep(5)
+                # Validate data and append only valid rows
+                if home_team and away_team and score:
+                    match_data.append({
+                        'Home Team': home_team,
+                        'Score': score,
+                        'Away Team': away_team,
+                    })
 
-            try:
-                # Find the league name
-                league_element = driver.find_element(By.XPATH, "/html/body/form/div[4]/div/section[2]/article[2]/div[1]/table/tbody/tr[1]/td/div")
-                league_name = league_element.text.strip()
+    return match_data
 
-                # Find all home team elements
-                home_teams = driver.find_elements(By.XPATH, "//td[@class='haftaninMaclariEv']/a/span")
-                home_team_names = [team.text.strip() for team in home_teams]
+# Function to save data to CSV
+def save_to_csv(data, filename):
+    if not data:
+        print("No data to save.")
+        return
+    keys = data[0].keys()  # Get the headers from the first dictionary
+    with open(filename, 'w', newline='', encoding='utf-8-sig') as csvfile:
+        writer = csv.DictWriter(csvfile, fieldnames=keys)
+        writer.writeheader()  # Write headers
+        writer.writerows(data)  # Write data rows
+    print(f"Data successfully saved to {filename}")
 
-                # Find the date elements
-                dates = driver.find_elements(By.XPATH, "//td[@class='haftaninMaclariTarih']")
-                match_dates = [date.text.strip() for date in dates]
+# URL of the website to scrape
+url = 'https://www.tff.org/Default.aspx?pageID=1650&hafta=1#macctl00_MPane_m_1650_12858_ctnr_m_1650_12858'
 
-                # Find the score elements
-                scores = driver.find_elements(By.XPATH, "//td[@class='haftaninMaclariSkor']")
-                score_results = [score.text.strip() for score in scores]
-
-                # Find the away team elements
-                away_teams = driver.find_elements(By.XPATH, "//td[@class='haftaninMaclariDeplasman']/a/span")
-                away_team_names = [away_team.text.strip() for away_team in away_teams]
-
-                # Ensure each home team aligns with its respective date
-                for home_team, match_date, score, away_team in zip(home_team_names, match_dates, score_results, away_team_names):
-                    # Split score into home_score and away_score
-                    try:
-                        home_score, away_score = map(int, score.split('-'))  # Convert both parts to integers
-                    except ValueError:
-                        # If score is not in "x-y" format, skip this entry
-                        print(f"Skipping invalid score: {score}")
-                        continue
-
-                    # Write data to the CSV
-                    writer.writerow([league_name, match_date, home_team, home_score, away_score, away_team])
-
-            except Exception as e:
-                print(f"Error processing URL {url}: {e}")
-
-# Close the browser
-driver.quit()
-
-print(f"Data has been saved to {csv_file}")
+# Scrape the matches and save to CSV
+try:
+    matches = scrape_matches(url)
+    if matches:
+        save_to_csv(matches, '2000_24_TR_nesine2lig.csv')  # Save the data to matches.csv
+    else:
+        print("No match data found.")
+except Exception as e:
+    print(f"An error occurred: {e}")

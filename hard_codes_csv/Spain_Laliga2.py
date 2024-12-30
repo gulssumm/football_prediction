@@ -104,7 +104,7 @@ urls = [base_url.format(year=year) for year in range(2000, 2002)]  # From 2000 t
 output_file = "2000_24_SP_laliga2.csv"
 
 # Write data to a CSV
-with open(output_file, mode='w', newline='', encoding='utf-8') as file:
+with open(output_file, mode='w', newline='', encoding='utf-8-sig') as file:
     writer = csv.DictWriter(file, fieldnames=["League Name", "Match Date", "Home Team", "Away Team", "Score"])
     writer.writeheader()  # Write header row
 
