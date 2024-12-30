@@ -5,7 +5,7 @@ from tkinter import messagebox, ttk
 
 # Authenticate user
 def authenticate_user(username, password):
-    conn = sqlite3.connect("spain_laliga.db")
+    conn = sqlite3.connect("../SPAIN/spain_laliga.db")
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM Users WHERE username = ? AND password = ?", (username, password))
     result = cursor.fetchone()
