@@ -4,7 +4,7 @@ import pandas as pd
 import os
 
 # File path for URLs
-file_path = 'C:/Users/Lenovo/football_prediction/basic_codes/URLS/urls_ENG_League1.txt'
+file_path = 'C:/Users/Lenovo/football_prediction/basic_codes/URLS/urls_ENG_ChampionshipLeague.txt'
 
 # Initialize the urls list
 urls = []
@@ -108,7 +108,7 @@ if urls:
     print(df)
 
     # Optionally, save the data to a CSV file
-    df.to_csv('2000_24_EN_LeagueOne.csv', index=False)
+    #df.to_csv('2000_24_EN_ChampionshipLeague2.csv', index=False)
 
     print("Data scraping completed successfully!")
 else:
