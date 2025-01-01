@@ -2,7 +2,6 @@ import sqlite3
 import tkinter as tk
 from tkinter import messagebox, ttk
 
-
 # Authenticate user
 def authenticate_user(username, password):
     conn = sqlite3.connect("merged.db")
@@ -11,7 +10,6 @@ def authenticate_user(username, password):
     result = cursor.fetchone()
     conn.close()
     return result is not None
-
 
 # Handle login
 def login():
@@ -25,19 +23,19 @@ def login():
     else:
         messagebox.showerror("Login Failed", "Invalid username or password!")
 
-
-# Query data
+# Query data based on selected league
 def query_data():
-    query = query_entry.get()
-    if not query.strip():
-        messagebox.showerror("Error", "Please enter a query!")
+    selected_league = league_var.get()
+    if not selected_league or selected_league == "Select a League":
+        messagebox.showerror("Error", "Please select a league!")
         return
 
     conn = sqlite3.connect("merged.db")
     cursor = conn.cursor()
 
     try:
-        cursor.execute(query)
+        query = "SELECT * FROM Football WHERE League = ?"
+        cursor.execute(query, (selected_league,))
         results = cursor.fetchall()
 
         # Clear previous results
@@ -52,17 +50,23 @@ def query_data():
     except sqlite3.Error as e:
         messagebox.showerror("Query Error", f"An error occurred: {e}")
 
-
 # Query screen
 def open_query_screen():
     query_screen = tk.Tk()
     query_screen.title("Query Data")
 
-    # Query label and entry
-    tk.Label(query_screen, text="Enter your SQL Query:").pack(pady=5)
-    global query_entry
-    query_entry = tk.Entry(query_screen, width=50)
-    query_entry.pack(pady=5)
+    # League selection dropdown
+    tk.Label(query_screen, text="Select a League:").pack(pady=5)
+    global league_var
+    league_var = tk.StringVar()
+    league_var.set("Select a League")
+
+    league_dropdown = ttk.Combobox(query_screen, textvariable=league_var, state="readonly")
+    league_dropdown['values'] = [
+        "Championship", "League One", "Premier League", "Ligue 1", "Bundesliga",
+        "Serie A", "La Liga", "Trendyol 1. Lig", "Trendyol Süper Lig"
+    ]
+    league_dropdown.pack(pady=5)
 
     # Query button
     query_button = tk.Button(query_screen, text="Run Query", command=query_data)
@@ -78,7 +82,6 @@ def open_query_screen():
     tree.pack(pady=10, fill="both", expand=True)
 
     query_screen.mainloop()
-
 
 # Login screen
 root = tk.Tk()
