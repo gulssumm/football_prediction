@@ -4,7 +4,7 @@ from selenium.webdriver.common.by import By
 import time
 
 # File containing URLs with placeholders for ID and {i}
-input_file = "urls_TR_TrendyolSuperLig.txt"
+input_file = "../basic_codes/URLS/urls_TR_TrendyolSuperLig.txt"
 # Output CSV file
 csv_file = "2000_24_TR_superlig.csv"
 
@@ -15,7 +15,7 @@ driver = webdriver.Chrome()  # Ensure ChromeDriver is installed and in PATH
 with open(csv_file, mode="w", newline="", encoding="utf-8-sig") as file:
     writer = csv.writer(file)
     # Write the header row
-    writer.writerow(["League Name", "Date", "Home Team", "Home Score", "Away Score", "Away Team"])
+    writer.writerow(["League Name", "Date", "Home Team", "Away Team", "Home Score", "Away Score"])
 
     # Read the URL templates from the text file
     with open(input_file, mode="r", encoding="utf-8") as url_file:
@@ -63,7 +63,7 @@ with open(csv_file, mode="w", newline="", encoding="utf-8-sig") as file:
                         continue
 
                     # Write data to the CSV
-                    writer.writerow([league_name, match_date, home_team, home_score, away_score, away_team])
+                    writer.writerow([league_name, match_date, home_team, away_team, home_score, away_score])
 
             except Exception as e:
                 print(f"Error processing URL {url}: {e}")
