@@ -23,19 +23,28 @@ def login():
     else:
         messagebox.showerror("Login Failed", "Invalid username or password!")
 
-# Query data based on selected league
+# Query data based on selected league and team
 def query_data():
     selected_league = league_var.get()
-    if not selected_league or selected_league == "Select a League":
-        messagebox.showerror("Error", "Please select a league!")
+    team_name = team_entry.get().strip()  # Get team name from the input field
+
+    if selected_league == "Select a League" and not team_name:
+        messagebox.showerror("Error", "Please select a league or enter a team name!")
         return
 
     conn = sqlite3.connect("merged.db")
     cursor = conn.cursor()
 
     try:
-        query = "SELECT * FROM Football WHERE League = ?"
-        cursor.execute(query, (selected_league,))
+        if team_name:
+            # Filter by both league and team
+            query = "SELECT * FROM Football WHERE League = ? AND (Home_Team = ? OR Away_Team = ?)"
+            cursor.execute(query, (selected_league, team_name, team_name))
+        else:
+            # Filter by only league (if no team name entered)
+            query = "SELECT * FROM Football WHERE League = ?"
+            cursor.execute(query, (selected_league,))
+
         results = cursor.fetchall()
 
         # Clear previous results
@@ -68,6 +77,12 @@ def open_query_screen():
     ]
     league_dropdown.pack(pady=5)
 
+    # Team name input field
+    tk.Label(query_screen, text="Enter a Team Name (Optional):").pack(pady=5)
+    global team_entry
+    team_entry = tk.Entry(query_screen)
+    team_entry.pack(pady=5)
+
     # Query button
     query_button = tk.Button(query_screen, text="Run Query", command=query_data)
     query_button.pack(pady=10)
@@ -86,6 +101,13 @@ def open_query_screen():
 # Login screen
 root = tk.Tk()
 root.title("Login Screen")
+root.geometry("400x300")
+root.configure(bg="lightblue")
+
+style = ttk.Style()
+style.configure("TLabel", font=("Helvetica", 12))
+style.configure("TButton", font=("Helvetica", 12), background="blue")
+style.configure("TCombobox", font=("Helvetica", 12))
 
 # Username label and entry
 tk.Label(root, text="Username:").pack(pady=5)
