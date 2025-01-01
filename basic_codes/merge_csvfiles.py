@@ -9,7 +9,7 @@ file_names = [
     '../GERMAN/2000_24_GER_Bundesliga.csv',
     '../ITALY/2000_24_IT_serieA.csv',
     '../SPAIN/2000_24_SP_laliga.csv',
-    '../TURKEY/2000_24_TR_birincilig.csv',
+    '../TURKEY/2000_22_TR_birincilig.csv',
     '../TURKEY/2000_24_TR_superlig.csv'
 ]
 
@@ -17,13 +17,13 @@ file_names = [
 output_file = 'merged_data.csv'
 
 # Merge CSV files
-with open(output_file, 'w', newline='', encoding='utf-8') as outfile:
+with open(output_file, 'w', newline='', encoding='utf-8-sig') as outfile:
     writer = csv.writer(outfile)
     is_first_file = True  # Flag to check if it's the first file
 
     for filename in file_names:
         try:
-            with open(filename, 'r', encoding='utf-8') as infile:
+            with open(filename, 'r', encoding='utf-8-sig') as infile:
                 reader = csv.reader(infile)
                 # Write header only for the first file
                 if is_first_file:
