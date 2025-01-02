@@ -176,7 +176,7 @@ def start_scraping():
 def scrape_data():
     try:
         # Call the Spain_LaLiga script (or another scraping script)
-        subprocess.run([r"C:\Users\21180\PycharmProjects\Football_Match_TR\.venv\Scripts\python.exe", "Spain_LaLiga.py"], check=True)
+        subprocess.run([r"..\.venv\Scripts\python.exe", "Spain_LaLiga.py"], check=True)
         messagebox.showinfo("Scraping Complete", "Data scraping is complete and saved.")
     except subprocess.CalledProcessError:
         messagebox.showerror("Error", "There was an error during scraping!")
