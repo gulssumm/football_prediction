@@ -3,6 +3,9 @@ import tkinter as tk
 from tkinter import messagebox, ttk
 from dateutil import parser
 from datetime import datetime
+import subprocess
+import threading
+
 
 # Authenticate user
 def authenticate_user(username, password):
@@ -101,7 +104,7 @@ def query_data():
 # Query screen
 def open_query_screen():
     query_screen = tk.Tk()
-    query_screen.title("Query Data")
+    query_screen.title("FOOTBALL MATCHES")
 
     # League selection dropdown
     tk.Label(query_screen, text="Select a League:").pack(pady=5)
@@ -137,7 +140,7 @@ def open_query_screen():
     end_year_entry.pack(pady=5)
 
     # Query button
-    query_button = tk.Button(query_screen, text="Run Query", command=query_data)
+    query_button = tk.Button(query_screen, text="GET DATA FROM DB", command=query_data)
     query_button.pack(pady=10)
 
     # Results table
@@ -149,6 +152,11 @@ def open_query_screen():
         tree.column(col, width=100)
     tree.pack(pady=10, fill="both", expand=True)
 
+    # New screen for real-time scraping
+    tk.Label(query_screen, text="Fetch Data from Website:").pack(pady=10)
+    scrape_button = tk.Button(query_screen, text="START WEB SCRAPING", command=start_scraping)
+    scrape_button.pack(pady=5)
+
     query_screen.mainloop()
 
 def extract_year(date_str):
@@ -159,6 +167,18 @@ def extract_year(date_str):
     except (ValueError, TypeError):
         return None  # Return None if parsing fails
 
+def start_scraping():
+    # Start the scraping in a separate thread to prevent freezing the UI
+    scraping_thread = threading.Thread(target=scrape_data)
+    scraping_thread.start()
+
+def scrape_data():
+    try:
+        # Call the Spain_LaLiga script (or another scraping script)
+        subprocess.run(["python", "Spain_LaLiga.py"], check=True)
+        messagebox.showinfo("Scraping Complete", "Data scraping is complete and saved.")
+    except subprocess.CalledProcessError:
+        messagebox.showerror("Error", "There was an error during scraping!")
 
 # Login screen
 root = tk.Tk()

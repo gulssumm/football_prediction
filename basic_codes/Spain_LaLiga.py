@@ -4,11 +4,11 @@ import pandas as pd
 
 # Set up Selenium WebDriver
 options = webdriver.ChromeOptions()
-options.add_argument("--headless")  # Run in headless mode (optional)
+#options.add_argument("--headless")  # Run in headless mode (optional)
 driver = webdriver.Chrome(options=options)
 
 # File containing all URLs (one per line)
-url_file = "urls_SP_LaLiga.txt"
+url_file = "../basic_codes/URLS/urls_SP_LaLiga.txt"
 
 # Initialize empty lists to store the extracted data
 leagues = []
