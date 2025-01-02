@@ -4,9 +4,9 @@ import pandas as pd
 import os
 
 # File path for URLs
-file_path = 'C:/Users/Lenovo/football_prediction/basic_codes/URLS/urls_ENG_ChampionshipLeague.txt'
+file_path = 'C:/Users/Lenovo/football_prediction/basic_codes/URLS/urls_ENG_League1.txt'
 
-# Initialize the urls list
+# Initialize the URLs list
 urls = []
 
 # Check if the file exists
@@ -52,12 +52,10 @@ if urls:
             for section in sections:
                 # Extract the main date
                 date_headers = section.find_elements(By.XPATH, ".//h3[contains(@class, 'fixres__header1')]")
-                detailed_date_headers = section.find_elements(By.XPATH, ".//h4[contains(@class, 'fixres__header2')]")
 
-                for header, detailed_header in zip(date_headers, detailed_date_headers):
+                for header in date_headers:
+                    # Use only the main date
                     main_date = driver.execute_script("return arguments[0].textContent;", header).strip() or "Unknown"
-                    detailed_date = driver.execute_script("return arguments[0].textContent;", detailed_header).strip() or "Unknown"
-                    combined_date = f"{main_date}, {detailed_date}"
 
                     # Find all matches under this section
                     match_elements = section.find_elements(By.CLASS_NAME, 'fixres__item')
@@ -81,7 +79,7 @@ if urls:
 
                         # Append the data to the lists
                         all_leagues.append(league)
-                        all_dates.append(combined_date)
+                        all_dates.append(main_date)
                         all_home_teams.append(home_team)
                         all_away_teams.append(away_team)
                         all_home_scores.append(home_score)
@@ -108,7 +106,7 @@ if urls:
     print(df)
 
     # Optionally, save the data to a CSV file
-    #df.to_csv('2000_24_EN_ChampionshipLeague2.csv', index=False)
+    df.to_csv('2000_24_EN_LeagueOne.csv', index=False)
 
     print("Data scraping completed successfully!")
 else:

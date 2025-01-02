@@ -1,11 +1,17 @@
 import sqlite3
 import tkinter as tk
 from tkinter import messagebox, ttk
+<<<<<<< HEAD
+=======
 from dateutil import parser
 from datetime import datetime
+<<<<<<< HEAD
 import subprocess
 import threading
 
+=======
+>>>>>>> aebac98c807f843c9f0d88a0ae34d9dc52a6d0e6
+>>>>>>> dc7f2a2ff609e6c92ef0370812e889646ed4612e
 
 # Authenticate user
 def authenticate_user(username, password):
@@ -28,6 +34,17 @@ def login():
     else:
         messagebox.showerror("Login Failed", "Invalid username or password!")
 
+<<<<<<< HEAD
+# Query data based on selected league and team
+def query_data():
+    selected_league = league_var.get()
+    team_name = team_entry.get().strip()  # Get team name from the input field
+
+    if selected_league == "Select a League" and not team_name:
+        messagebox.showerror("Error", "Please select a league or enter a team name!")
+        return
+
+=======
 def convert_date_format(date_str):
     # Convert from yyyy-mm-dd to "May 2001, Monday 28th May"
     date_obj = datetime.strptime(date_str, "%Y-%m-%d")  # Convert string to datetime object
@@ -57,12 +74,25 @@ def query_data():
         messagebox.showerror("Error", "Please enter valid numeric years!")
         return
 
+>>>>>>> aebac98c807f843c9f0d88a0ae34d9dc52a6d0e6
     conn = sqlite3.connect("merged.db")
     cursor = conn.cursor()
 
     try:
+<<<<<<< HEAD
+        if team_name:
+            # Filter by both league and team
+            query = "SELECT * FROM Football WHERE League = ? AND (Home_Team = ? OR Away_Team = ?)"
+            cursor.execute(query, (selected_league, team_name, team_name))
+        else:
+            # Filter by only league (if no team name entered)
+            query = "SELECT * FROM Football WHERE League = ?"
+            cursor.execute(query, (selected_league,))
+
+=======
         # Fetch all rows and filter dates in Python
         cursor.execute("SELECT * FROM Football")
+>>>>>>> aebac98c807f843c9f0d88a0ae34d9dc52a6d0e6
         results = cursor.fetchall()
 
         filtered_results = []
@@ -88,12 +118,18 @@ def query_data():
         for i in tree.get_children():
             tree.delete(i)
 
+<<<<<<< HEAD
+        # Display new results
+        for row in results:
+            tree.insert("", "end", values=row)
+=======
         # Display filtered results
         if filtered_results:
             for row in filtered_results:
                 tree.insert("", "end", values=row)
         else:
             messagebox.showinfo("No Results", "No data found matching the criteria.")
+>>>>>>> aebac98c807f843c9f0d88a0ae34d9dc52a6d0e6
 
     except sqlite3.Error as e:
         messagebox.showerror("Query Error", f"An error occurred: {e}")
@@ -125,6 +161,8 @@ def open_query_screen():
     team_entry = tk.Entry(query_screen)
     team_entry.pack(pady=5)
 
+<<<<<<< HEAD
+=======
     # Year selection (initial year)
     tk.Label(query_screen, text="Enter Initial Year:").pack(pady=5)
     global initial_year_var
@@ -139,6 +177,7 @@ def open_query_screen():
     end_year_entry = tk.Entry(query_screen, textvariable=end_year_var, width=12)
     end_year_entry.pack(pady=5)
 
+>>>>>>> aebac98c807f843c9f0d88a0ae34d9dc52a6d0e6
     # Query button
     query_button = tk.Button(query_screen, text="GET DATA FROM DB", command=query_data)
     query_button.pack(pady=10)
