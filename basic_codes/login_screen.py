@@ -3,7 +3,6 @@ import tkinter as tk
 from tkinter import messagebox, ttk
 from tkcalendar import DateEntry
 from datetime import datetime
-import calendar
 
 # Authenticate user
 def authenticate_user(username, password):
@@ -20,7 +19,7 @@ def login():
     password = password_entry.get()
 
     if authenticate_user(username, password):
-        messagebox.showinfo("Login Successful", "Welcome!")
+        #messagebox.showinfo("Login Successful", "Welcome!")
         root.destroy()  # Close login screen
         open_query_screen()  # Open query screen
     else:
