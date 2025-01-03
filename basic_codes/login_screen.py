@@ -36,6 +36,33 @@ def convert_date_format(date_str):
     return formatted_date
 
 
+def get_years_from_file(file_path):
+    years = []
+    try:
+        with open(file_path, 'r') as file:
+            for line in file:
+                line = line.strip()
+                if line:  # Ignore empty lines
+                    print(f"Processing line: {line}")  # Debug output to track the line being processed
+                    try:
+                        # Extract the "YYYY-YY" part from the URL
+                        year_part = line.split("/")[-1]  # Extract the "YYYY-YY" part
+                        first_year = int(year_part.split("-")[0])  # Get the first year (YYYY)
+                        second_year = int(year_part.split("-")[1])  # Get the second year (YY)
+                        full_second_year = 2000 + second_year  # Convert YY to full year (20YY)
+
+                        # Add both years to the list
+                        years.append(first_year)
+                        years.append(full_second_year)
+                    except ValueError:
+                        print(f"Skipping invalid line: {line}")  # Debug invalid lines
+                        continue  # Skip lines that don't have the correct format
+    except FileNotFoundError:
+        messagebox.showerror("File Error", f"File {file_path} not found!")
+    return sorted(set(years))  # Return unique years sorted
+
+
+# Adjust the query_data function to use the years from the file
 def query_data():
     selected_league = league_var.get()
     team_name = team_entry.get().strip()
@@ -57,12 +84,24 @@ def query_data():
         messagebox.showerror("Error", "Please enter valid numeric years!")
         return
 
+    # Load valid years from the file
+    valid_years = get_years_from_file("../basic_codes/URLS/urls_SP_LaLiga.txt")
+    if not valid_years:
+        messagebox.showerror("Error", "Could not load valid years from the file.")
+        return
+
+    # Filter user-provided years by valid years
+    if initial_year and initial_year not in valid_years:
+        messagebox.showerror("Error", f"Initial year {initial_year} is not in the valid range.")
+        return
+    if end_year and end_year not in valid_years:
+        messagebox.showerror("Error", f"End year {end_year} is not in the valid range.")
+        return
+
     conn = sqlite3.connect("merged.db")
     cursor = conn.cursor()
 
-
     try:
-        # Fetch all rows and filter dates in Python
         cursor.execute("SELECT * FROM Football")
         results = cursor.fetchall()
 
@@ -72,6 +111,8 @@ def query_data():
             year = extract_year(date_str)
 
             if year:
+                if year not in valid_years:
+                    continue  # Skip if year is not valid
                 if selected_league != "Select a League" and selected_league.lower() not in league.lower():
                     continue
                 if team_name and team_name.lower() not in (home_team.lower() + away_team.lower()):
@@ -100,6 +141,7 @@ def query_data():
         messagebox.showerror("Query Error", f"An error occurred: {e}")
     finally:
         conn.close()
+
 
 
 # Query screen
@@ -173,13 +215,46 @@ def start_scraping():
     scraping_thread = threading.Thread(target=scrape_data)
     scraping_thread.start()
 
+def reload_data():
+    conn = sqlite3.connect("merged.db")
+    cursor = conn.cursor()
+    try:
+        cursor.execute("SELECT * FROM Football")
+        results = cursor.fetchall()
+
+        # Clear previous data in the tree
+        for i in tree.get_children():
+            tree.delete(i)
+
+        # Insert new data into the tree
+        for row in results:
+            tree.insert("", "end", values=row)
+    except sqlite3.Error as e:
+        messagebox.showerror("Error", f"Could not load data: {e}")
+    finally:
+        conn.close()
+
+
 def scrape_data():
     try:
-        # Call the Spain_LaLiga script (or another scraping script)
-        subprocess.run([r"..\.venv\Scripts\python.exe", "Spain_LaLiga.py"], check=True)
-        messagebox.showinfo("Scraping Complete", "Data scraping is complete and saved.")
+        # Retrieve the year inputs from the user
+        initial_year = int(initial_year_var.get())
+        end_year = int(end_year_var.get())
+
+        # Call the Spain_LaLiga script with the year range
+        subprocess.run(
+            [r"..\.venv\Scripts\python.exe", "Spain_LaLiga.py", str(initial_year), str(end_year)],
+            check=True
+        )
+        messagebox.showinfo("Scraping Complete", f"Data scraping from {initial_year} to {end_year} is complete and saved.")
+
+        # Automatically refresh the table with the updated data
+        query_data()
     except subprocess.CalledProcessError:
         messagebox.showerror("Error", "There was an error during scraping!")
+    except ValueError:
+        messagebox.showerror("Error", "Please enter valid numeric years!")
+
 
 # Login screen
 root = tk.Tk()
