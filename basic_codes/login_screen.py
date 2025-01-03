@@ -28,13 +28,6 @@ def login():
     else:
         messagebox.showerror("Login Failed", "Invalid username or password!")
 
-def convert_date_format(date_str):
-    # Convert from yyyy-mm-dd to "May 2001, Monday 28th May"
-    date_obj = datetime.strptime(date_str, "%Y-%m-%d")  # Convert string to datetime object
-    # Format the date
-    formatted_date = date_obj.strftime("%B %Y, %A %dth %B")
-    return formatted_date
-
 
 def get_years_from_file(file_path):
     years = []
@@ -117,12 +110,15 @@ def query_data():
                     continue
                 if team_name and team_name.lower() not in (home_team.lower() + away_team.lower()):
                     continue
-                if initial_year and end_year and not (initial_year <= year <= end_year):
-                    continue
-                if initial_year and not end_year and year < initial_year:
-                    continue
-                if end_year and not initial_year and year > end_year:
-                    continue
+                if initial_year and end_year:
+                    if not (initial_year <= year <= end_year):
+                        continue
+                elif initial_year and not end_year:
+                    if year < initial_year:
+                        continue
+                elif end_year and not initial_year:
+                    if year > end_year:
+                        continue
 
                 filtered_results.append(row)
 
