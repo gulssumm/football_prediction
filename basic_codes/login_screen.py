@@ -5,8 +5,8 @@ from dateutil import parser
 import subprocess
 import threading
 import csv
-from Spain_LaLiga import scrape_laliga
-
+from scrape_all_leagues import scrape_league
+import os
 
 # Authenticate user
 def authenticate_user(username, password):
@@ -36,13 +36,25 @@ def load_scraped_data_to_ui(csv_file):
         for i in tree.get_children():
             tree.delete(i)
 
-        # Read data from the CSV file
-        with open(csv_file, newline='') as csvfile:
-            reader = csv.reader(csvfile)
-            header = next(reader)  # Skip the header if present
-            for row in reader:
-                # Insert the row into the Treeview
-                tree.insert("", "end", values=row)
+            # Check for the correct path
+            if not os.path.exists(csv_file):
+                print(f"CSV file {csv_file} does not exist.")  # Debug
+                raise FileNotFoundError(f"CSV file {csv_file} not found.")
+
+            # Read data from the CSV file
+            with open(csv_file, newline='') as csvfile:
+                reader = csv.reader(csvfile)
+                header = next(reader, None)  # Skip the header if present
+                data_loaded = False  # Flag to check if any data is loaded
+                for row in reader:
+                    if len(row) == len(tree["columns"]):  # Ensure the row has the right number of columns
+                        tree.insert("", "end", values=row)
+                        data_loaded = True
+                    else:
+                        print(f"Skipping invalid row: {row}")  # Debug output for invalid rows
+
+                if not data_loaded:
+                    tree.insert("", "end", values=["No data available"] * len(tree["columns"]))
 
         # messagebox.showinfo("Data Loaded", "Scraped data successfully loaded into the UI.")
 
@@ -80,6 +92,7 @@ def get_years_from_file(file_path):
 
 # Adjust the query_data function to use the years from the file
 def query_data():
+    global url_file
     selected_league = league_var.get()
     team_name = team_entry.get().strip()
     initial_year = initial_year_var.get().strip()
@@ -101,7 +114,8 @@ def query_data():
         return
 
     # Load valid years from the file
-    valid_years = get_years_from_file("../basic_codes/URLS/urls_SP_LaLiga.txt")
+    url_file = f"../basic_codes/URLS/urls_{selected_league.replace(' ', '_').upper()}.txt"
+    valid_years = get_years_from_file(url_file)
     if not valid_years:
         messagebox.showerror("Error", "Could not load valid years from the file.")
         return
@@ -123,7 +137,7 @@ def query_data():
 
         filtered_results = []
         for row in results:
-            row_id, league, date_str, home_team, away_team, home_score, away_score = row
+            id, league, date_str, home_team, away_team, home_score, away_score = row
             year = extract_year(date_str)
 
             if year:
@@ -177,7 +191,7 @@ def open_query_screen():
     league_dropdown = ttk.Combobox(query_screen, textvariable=league_var, state="readonly")
     league_dropdown['values'] = [
         "Championship", "League One", "Premier League", "Ligue 1", "Bundesliga",
-        "Serie A", "La Liga", "Trendyol 1. Lig", "Trendyol Süper Lig"
+        "Serie A", "la liga", "Trendyol 1. Lig", "Trendyol Süper Lig"
     ]
     league_dropdown.pack(pady=5)
 
@@ -214,6 +228,9 @@ def open_query_screen():
         tree.column(col, width=100)
     tree.pack(pady=10, fill="both", expand=True)
 
+    # Set initial placeholder
+    tree.insert("", "end", values=["No data available"] * len(columns))
+
     # New screen for real-time scraping
     tk.Label(query_screen, text="Fetch Data from Website:").pack(pady=10)
     scrape_button = tk.Button(query_screen, text="START WEB SCRAPING", command=start_scraping)
@@ -233,6 +250,7 @@ def extract_year(date_str):
 def start_scraping():
     # Start the scraping in a separate thread to prevent freezing the UI
     scraping_thread = threading.Thread(target=scrape_data)
+    scraping_thread.daemon = True  # Ensure the thread doesn't keep running after the program exits
     scraping_thread.start()
 
 
@@ -240,22 +258,30 @@ def scrape_data():
     try:
         # Retrieve the year inputs from the user
         initial_year = int(initial_year_var.get())
-        print(initial_year)
         end_year = int(end_year_var.get())
-        print(end_year)
+
+        # Get the selected league name from the dropdown
+        league_name = league_var.get()  # This gets the name of the selected league
+
+        # Construct the URL file path based on the selected league
+        url_file = f"../basic_codes/URLS/urls_{league_name.replace(' ', '_').upper()}.txt"
+
+        # Construct CSV filename
+        csv_file = f"{initial_year}_{end_year}_{league_var.get().replace(' ', '_').lower()}.csv"
 
         # Call the scraping function
-        scrape_laliga(initial_year, end_year)
+        scrape_league(url_file, league_name, initial_year, end_year)
 
-        # The CSV file generated will be named `start_year_end_year_SP_laliga.csv`
-        csv_file = f"{initial_year}_{end_year}_SP_laliga.csv"
         load_scraped_data_to_ui(csv_file)  # Load data from the new CSV file
 
     except subprocess.CalledProcessError as e:
         messagebox.showerror("Error", f"Subprocess error: {e}")
     except ValueError:
         messagebox.showerror("Error", "Please enter valid numeric years!")
-
+    except FileNotFoundError:
+        messagebox.showerror("Error", "Scraped CSV file not found!")
+    except Exception as e:
+        messagebox.showerror("Error", f"An unexpected error occurred: {e}")
 
 # Login screen
 root = tk.Tk()
