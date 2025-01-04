@@ -1,9 +1,12 @@
 import sqlite3
 import pandas as pd
+import os
 
-# Load the CSV file into a pandas DataFrame
-csv_file = "merged_data.csv"  # Replace with your CSV file path
-data = pd.read_csv(csv_file)
+script_dir = os.path.dirname(os.path.abspath(__file__))
+
+file_path = os.path.join(script_dir, "merged_data.csv")
+
+data = pd.read_csv(file_path)
 
 # Remove spaces from the column names
 data.columns = data.columns.str.replace(' ', '_')
