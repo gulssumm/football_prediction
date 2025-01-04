@@ -2,7 +2,6 @@ import sqlite3
 import tkinter as tk
 from tkinter import messagebox, ttk
 from dateutil import parser
-from datetime import datetime
 import subprocess
 import threading
 
@@ -206,29 +205,11 @@ def extract_year(date_str):
     except (ValueError, TypeError):
         return None  # Return None if parsing fails
 
+
 def start_scraping():
     # Start the scraping in a separate thread to prevent freezing the UI
     scraping_thread = threading.Thread(target=scrape_data)
     scraping_thread.start()
-
-def reload_data():
-    conn = sqlite3.connect("merged.db")
-    cursor = conn.cursor()
-    try:
-        cursor.execute("SELECT * FROM Football")
-        results = cursor.fetchall()
-
-        # Clear previous data in the tree
-        for i in tree.get_children():
-            tree.delete(i)
-
-        # Insert new data into the tree
-        for row in results:
-            tree.insert("", "end", values=row)
-    except sqlite3.Error as e:
-        messagebox.showerror("Error", f"Could not load data: {e}")
-    finally:
-        conn.close()
 
 
 def scrape_data():
@@ -238,16 +219,27 @@ def scrape_data():
         end_year = int(end_year_var.get())
 
         # Call the Spain_LaLiga script with the year range
-        subprocess.run(
+        result = subprocess.run(
             [r"..\.venv\Scripts\python.exe", "Spain_LaLiga.py", str(initial_year), str(end_year)],
-            check=True
+            check=True,
+            capture_output=True,
+            text=True
         )
-        messagebox.showinfo("Scraping Complete", f"Data scraping from {initial_year} to {end_year} is complete and saved.")
 
-        # Automatically refresh the table with the updated data
-        query_data()
-    except subprocess.CalledProcessError:
-        messagebox.showerror("Error", "There was an error during scraping!")
+        print("Scraping output:", result.stdout)  # Debug output
+        print("Scraping errors:", result.stderr)  # Debug errors
+
+        # Verify if the data is written to the CSV or database
+        if "error" in result.stderr.lower():
+            messagebox.showerror("Error", "Scraping encountered an error!")
+        else:
+            messagebox.showinfo("Scraping Complete", f"Data scraping from {initial_year} to {end_year} is complete and saved.")
+
+            # Refresh data in the UI
+            query_data()
+
+    except subprocess.CalledProcessError as e:
+        messagebox.showerror("Error", f"Subprocess error: {e}")
     except ValueError:
         messagebox.showerror("Error", "Please enter valid numeric years!")
 

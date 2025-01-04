@@ -126,3 +126,4 @@ if __name__ == "__main__":
 
     # Call the function to scrape the data
     scrape_laliga(start_year, end_year)
+    scrape_laliga(2024, 2025)
