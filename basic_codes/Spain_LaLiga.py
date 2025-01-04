@@ -99,4 +99,4 @@ def scrape_laliga(start_year, end_year):
     print(f"Data scraping complete. Results saved to {output_file}")
 
 # Run the function
-scrape_laliga(2024, 2025)
+# scrape_laliga(2024, 2025)

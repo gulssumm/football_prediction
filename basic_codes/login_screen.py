@@ -4,6 +4,8 @@ from tkinter import messagebox, ttk
 from dateutil import parser
 import subprocess
 import threading
+import csv
+from Spain_LaLiga import scrape_laliga
 
 
 # Authenticate user
@@ -26,6 +28,28 @@ def login():
         open_query_screen()  # Open query screen
     else:
         messagebox.showerror("Login Failed", "Invalid username or password!")
+
+
+def load_scraped_data_to_ui(csv_file):
+    try:
+        # Clear previous data in the treeview
+        for i in tree.get_children():
+            tree.delete(i)
+
+        # Read data from the CSV file
+        with open(csv_file, newline='') as csvfile:
+            reader = csv.reader(csvfile)
+            header = next(reader)  # Skip the header if present
+            for row in reader:
+                # Insert the row into the Treeview
+                tree.insert("", "end", values=row)
+
+        # messagebox.showinfo("Data Loaded", "Scraped data successfully loaded into the UI.")
+
+    except FileNotFoundError:
+        messagebox.showerror("File Error", "Scraped data file not found!")
+    except Exception as e:
+        messagebox.showerror("Error", f"An error occurred while loading the data: {e}")
 
 
 def get_years_from_file(file_path):
@@ -183,7 +207,7 @@ def open_query_screen():
 
     # Results table
     global tree
-    columns = ["ID", "League", "Date", "Home_Team", "Away_Team", "Home_Score", "Away_Score"]
+    columns = ["League", "Date", "Home_Team", "Away_Team", "Home_Score", "Away_Score"]
     tree = ttk.Treeview(query_screen, columns=columns, show="headings")
     for col in columns:
         tree.heading(col, text=col)
@@ -216,27 +240,16 @@ def scrape_data():
     try:
         # Retrieve the year inputs from the user
         initial_year = int(initial_year_var.get())
+        print(initial_year)
         end_year = int(end_year_var.get())
+        print(end_year)
 
-        # Call the Spain_LaLiga script with the year range
-        result = subprocess.run(
-            [r"..\.venv\Scripts\python.exe", "Spain_LaLiga.py", str(initial_year), str(end_year)],
-            check=True,
-            capture_output=True,
-            text=True
-        )
+        # Call the scraping function
+        scrape_laliga(initial_year, end_year)
 
-        print("Scraping output:", result.stdout)  # Debug output
-        print("Scraping errors:", result.stderr)  # Debug errors
-
-        # Verify if the data is written to the CSV or database
-        if "error" in result.stderr.lower():
-            messagebox.showerror("Error", "Scraping encountered an error!")
-        else:
-            messagebox.showinfo("Scraping Complete", f"Data scraping from {initial_year} to {end_year} is complete and saved.")
-
-            # Refresh data in the UI
-            query_data()
+        # The CSV file generated will be named `start_year_end_year_SP_laliga.csv`
+        csv_file = f"{initial_year}_{end_year}_SP_laliga.csv"
+        load_scraped_data_to_ui(csv_file)  # Load data from the new CSV file
 
     except subprocess.CalledProcessError as e:
         messagebox.showerror("Error", f"Subprocess error: {e}")
