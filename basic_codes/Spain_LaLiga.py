@@ -1,36 +1,45 @@
-import sys
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 import pandas as pd
 
+
 def filter_urls_by_year(urls, start_year, end_year):
     filtered_urls = []
     for url in urls:
-        # Extract the second-to-last part of the URL and check if it's a valid year
-        year_part = url.split('/')[-2]
-        if year_part.isdigit():
-            year = int(year_part)
-            if start_year <= year <= end_year:
-                filtered_urls.append(url)
+        # Extract the "YYYY-YY" part from the URL (the second-to-last part of the URL)
+        year_part = url.split("/")[-1]  # Assuming the "YYYY-YY" part is the second-to-last element in the URL
+
+        if year_part:  # Check if the year part is non-empty
+            print(f"Processing URL: {url}")  # Debug output to track the URL being processed
+
+            try:
+                # Extract the first and second year from the "YYYY-YY" part
+                first_year = int(year_part.split("-")[0])  # Get the first year (YYYY)
+                second_year = int(year_part.split("-")[1])  # Get the second year (YY)
+                full_second_year = 2000 + second_year  # Convert YY to full year (20YY)
+
+                # Check if the years are within the specified range
+                if start_year <= first_year <= end_year or start_year <= full_second_year <= end_year:
+                    filtered_urls.append(url)  # Add the URL to the list if it's within the range
+            except ValueError:
+                print(f"Skipping invalid URL: {url}")  # Debug invalid URLs
+                continue  # Skip URLs with invalid format
+
+    print(f"Filtered URLs: {filtered_urls}")
     return filtered_urls
 
 
 def scrape_laliga(start_year, end_year):
     # Set up Selenium WebDriver
     options = webdriver.ChromeOptions()
-    # options.add_argument("--headless")  # Run in headless mode (optional)
+    options.add_argument("--headless")  # Run in headless mode
     driver = webdriver.Chrome(options=options)
 
     # File containing all URLs (one per line)
     url_file = "../basic_codes/URLS/urls_SP_LaLiga.txt"
 
     # Initialize empty lists to store the extracted data
-    leagues = []
-    dates = []
-    home_teams = []
-    away_teams = []
-    home_scores = []
-    away_scores = []
+    leagues, dates, home_teams, away_teams, home_scores, away_scores = [], [], [], [], [], []
 
     # Read URLs from the file
     with open(url_file, "r") as file:
@@ -39,91 +48,55 @@ def scrape_laliga(start_year, end_year):
     # Filter the URLs based on the year range
     filtered_urls = filter_urls_by_year(urls, start_year, end_year)
 
-    # Loop through each URL and scrape the data
     for url in filtered_urls:
-        url = url.strip()  # Remove any leading/trailing whitespace
-        if not url:
-            continue  # Skip empty lines
+        url = url.strip()
+        print(f"Scraping URL: {url}")
 
-        # Open the URL
-        driver.get(url)
-        driver.implicitly_wait(5)  # Wait for the page to load
-
-        # Extract league name (assume it's a global header)
         try:
-            league_header = driver.find_element(By.CLASS_NAME, 'swap-text__target')
-            league = league_header.text.strip()
-        except:
-            league = 'Unknown'
+            driver.get(url)
+            driver.implicitly_wait(5)
 
-        # Get all sections containing headers and matches
-        sections = driver.find_elements(By.XPATH, "//div[contains(@class, 'fixres__body')]/..")
+            # Extract matches
+            matches = driver.find_elements(By.CLASS_NAME, "fixres__item")
+            for match in matches:
+                try:
+                    league = "La Liga"
+                    date = driver.find_element(By.CLASS_NAME, "fixres__header1").text.strip()
+                    teams = match.find_elements(By.CLASS_NAME, "swap-text__target")
+                    scores = match.find_elements(By.CLASS_NAME, "matches__teamscores-side")
 
-        # Loop through each section
-        for section in sections:
-            date_headers = driver.find_elements(By.XPATH, "//h3[contains(@class, 'fixres__header1')]")
-            for i, header in enumerate(date_headers):
-                date = driver.execute_script("return arguments[0].textContent;", header).strip() or "Unknown"
+                    home_team = teams[0].text.strip() if len(teams) > 0 else "Unknown"
+                    away_team = teams[1].text.strip() if len(teams) > 1 else "Unknown"
+                    home_score = scores[0].text.strip() if len(scores) > 0 else "N/A"
+                    away_score = scores[1].text.strip() if len(scores) > 1 else "N/A"
 
-                # Find all matches under this section
-                match_elements = section.find_elements(By.CLASS_NAME, 'fixres__item')
-
-                for match in match_elements:
-                    # Extract teams
-                    try:
-                        team_elements = match.find_elements(By.CLASS_NAME, 'swap-text__target')
-                        home_team = team_elements[0].text if len(team_elements) > 0 else 'Unknown'
-                        away_team = team_elements[1].text if len(team_elements) > 1 else 'Unknown'
-                    except:
-                        home_team, away_team = 'Unknown', 'Unknown'
-
-                    # Extract scores
-                    try:
-                        score_elements = match.find_elements(By.CLASS_NAME, 'matches__teamscores-side')
-                        home_score = score_elements[0].text if len(score_elements) > 0 else 'N/A'
-                        away_score = score_elements[1].text if len(score_elements) > 1 else 'N/A'
-                    except:
-                        home_score, away_score = 'N/A', 'N/A'
-
-                    # Append the data to the lists
+                    # Append data
                     leagues.append(league)
                     dates.append(date)
                     home_teams.append(home_team)
                     away_teams.append(away_team)
                     home_scores.append(home_score)
                     away_scores.append(away_score)
+                except Exception as e:
+                    print(f"Error parsing match: {e}")
+        except Exception as e:
+            print(f"Error loading URL {url}: {e}")
 
-    # Close the driver after scraping
     driver.quit()
 
-    # Create a DataFrame to organize the data
+    # Save results to CSV
     data = {
-        'League': leagues,
-        'Date': dates,
-        'Home Team': home_teams,
-        'Away Team': away_teams,
-        'Home Score': home_scores,
-        'Away Score': away_scores
+        "League": leagues,
+        "Date": dates,
+        "Home Team": home_teams,
+        "Away Team": away_teams,
+        "Home Score": home_scores,
+        "Away Score": away_scores,
     }
     df = pd.DataFrame(data)
-
-    # Save the results to a CSV file
     output_file = f"{start_year}_{end_year}_SP_laliga.csv"
     df.to_csv(output_file, index=False)
-
     print(f"Data scraping complete. Results saved to {output_file}")
 
-
-if __name__ == "__main__":
-    # Check if the script is called with command-line arguments
-    if len(sys.argv) != 3:
-        print("Usage: python Spain_LaLiga.py <start_year> <end_year>")
-        sys.exit(1)
-
-    # Parse the years from the command-line arguments
-    start_year = int(sys.argv[1])
-    end_year = int(sys.argv[2])
-
-    # Call the function to scrape the data
-    scrape_laliga(start_year, end_year)
-    scrape_laliga(2024, 2025)
+# Run the function
+scrape_laliga(2024, 2025)
