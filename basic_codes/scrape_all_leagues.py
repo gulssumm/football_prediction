@@ -95,7 +95,7 @@ def scrape_league(url_file, league_name, initial_year, end_year):
         except Exception as e:
             print(f"Error loading URL {url}: {e}")
 
-    driver.quit()
+    #driver.quit()
 
     # Save results to CSV
     data = {
