@@ -191,7 +191,7 @@ def open_query_screen():
     league_dropdown = ttk.Combobox(query_screen, textvariable=league_var, state="readonly")
     league_dropdown['values'] = [
         "Championship", "League One", "Premier League", "Ligue 1", "Bundesliga",
-        "Serie A", "la liga", "Trendyol 1. Lig", "Trendyol Süper Lig"
+        "Serie A", "La Liga", "Trendyol 1. Lig", "Trendyol Süper Lig"
     ]
     league_dropdown.pack(pady=5)
 
@@ -262,6 +262,7 @@ def scrape_data():
 
         # Get the selected league name from the dropdown
         league_name = league_var.get()  # This gets the name of the selected league
+        print(league_name)
 
         # Construct the URL file path based on the selected league
         url_file = f"../basic_codes/URLS/urls_{league_name.replace(' ', '_').upper()}.txt"
