@@ -169,6 +169,14 @@ def query_data():
     finally:
         conn.close()
 
+# Define a function to clear all data in the Treeview
+def clear_data():
+    for item in tree.get_children():
+        tree.delete(item)
+    # Optionally, insert a placeholder row to indicate the table is empty
+    tree.insert("", "end", values=["No data available"] * len(tree["columns"]))
+
+
 # Query screen
 def open_query_screen():
     query_screen = tk.Tk()
@@ -222,6 +230,10 @@ def open_query_screen():
 
     # Set initial placeholder
     tree.insert("", "end", values=["No data available"] * len(columns))
+
+    # Clear data button
+    clear_button = tk.Button(query_screen, text="CLEAR", command=clear_data)
+    clear_button.pack(pady=10)
 
     # New screen for real-time scraping
     tk.Label(query_screen, text="Fetch Data from Website:").pack(pady=10)
