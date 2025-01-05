@@ -108,7 +108,7 @@ def query_data():
         return
 
     # Load valid years from the file
-    url_file = f"C:/Users/Lenovo/football_prediction/basic_codes/URLS/urls_{selected_league.replace(' ', '_').upper()}.txt"
+    url_file = f"../basic_codes/URLS/urls_{selected_league.replace(' ', '_').upper()}.txt"
     valid_years = get_years_from_file(url_file)
     if not valid_years:
         messagebox.showerror("Error", "Could not load valid years from the file.")
@@ -257,7 +257,7 @@ def scrape_data():
         print(league_name)
 
         # Construct the URL file path based on the selected league
-        url_file = f"C:/Users/Lenovo/football_prediction/basic_codes/URLS/urls_{league_name.replace(' ', '_').upper()}.txt"
+        url_file = f"../basic_codes/URLS/urls_{league_name.replace(' ', '_').upper()}.txt"
 
         # Construct CSV filename
         csv_file = f"{initial_year}_{end_year}_{league_var.get().replace(' ', '_').lower()}.csv"
