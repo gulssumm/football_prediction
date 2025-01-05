@@ -2,24 +2,26 @@ import sqlite3
 import pandas as pd
 import os
 
+# CSV dosyasının bulunduğu dizini al
 script_dir = os.path.dirname(os.path.abspath(__file__))
 
+# CSV dosyasının yolunu oluştur
 file_path = os.path.join(script_dir, "merged_data.csv")
 
+# CSV dosyasını pandas ile oku
 data = pd.read_csv(file_path)
 
-# Remove spaces from the column names
+# Sütun adlarındaki boşlukları "_" ile değiştir
 data.columns = data.columns.str.replace(' ', '_')
 
-# Connect to SQLite database (or create it if it doesn't exist)
+# SQLite veritabanına bağlan (yoksa oluşturur)
 db_file = "merged.db"
 conn = sqlite3.connect(db_file)
 cursor = conn.cursor()
 
-# Create the FOOTBALL table in the database
+# FOOTBALL tablosunu oluştur (id sütunu ve PRIMARY KEY olmadan)
 create_football_table_query = """
 CREATE TABLE IF NOT EXISTS FOOTBALL (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
     League TEXT,
     Date TEXT,
     Home_Team TEXT,
@@ -30,20 +32,19 @@ CREATE TABLE IF NOT EXISTS FOOTBALL (
 """
 cursor.execute(create_football_table_query)
 
-# Insert the data from the DataFrame into the FOOTBALL table
+# FOOTBALL tablosuna verileri ekle
 data.to_sql('FOOTBALL', conn, if_exists='append', index=False)
 
-# Create the Users table in the database
+# Users tablosunu oluştur
 create_users_table_query = """
 CREATE TABLE IF NOT EXISTS Users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT UNIQUE,
     password TEXT
 )
 """
 cursor.execute(create_users_table_query)
 
-# Optional: Insert default users into the Users table
+# Varsayılan kullanıcıları Users tablosuna ekle
 insert_users_query = """
 INSERT OR IGNORE INTO Users (username, password) VALUES (?, ?)
 """
@@ -55,8 +56,8 @@ default_users = [
 
 cursor.executemany(insert_users_query, default_users)
 
-# Commit and close the connection
+# İşlemleri tamamla ve bağlantıyı kapat
 conn.commit()
 conn.close()
 
-print("Data and Users table saved successfully!")
+print("Data and Users table created successfully!")

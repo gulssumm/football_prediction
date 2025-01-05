@@ -23,12 +23,10 @@ def login():
     password = password_entry.get()
 
     if authenticate_user(username, password):
-        #messagebox.showinfo("Login Successful", "Welcome!")
         root.destroy()  # Close login screen
         open_query_screen()  # Open query screen
     else:
         messagebox.showerror("Login Failed", "Invalid username or password!")
-
 
 def load_scraped_data_to_ui(csv_file):
     try:
@@ -36,33 +34,30 @@ def load_scraped_data_to_ui(csv_file):
         for i in tree.get_children():
             tree.delete(i)
 
-            # Check for the correct path
-            if not os.path.exists(csv_file):
-                print(f"CSV file {csv_file} does not exist.")  # Debug
-                raise FileNotFoundError(f"CSV file {csv_file} not found.")
+        # Check for the correct path
+        if not os.path.exists(csv_file):
+            print(f"CSV file {csv_file} does not exist.")  # Debug
+            raise FileNotFoundError(f"CSV file {csv_file} not found.")
 
-            # Read data from the CSV file
-            with open(csv_file, newline='') as csvfile:
-                reader = csv.reader(csvfile)
-                header = next(reader, None)  # Skip the header if present
-                data_loaded = False  # Flag to check if any data is loaded
-                for row in reader:
-                    if len(row) == len(tree["columns"]):  # Ensure the row has the right number of columns
-                        tree.insert("", "end", values=row)
-                        data_loaded = True
-                    else:
-                        print(f"Skipping invalid row: {row}")  # Debug output for invalid rows
+        # Read data from the CSV file
+        with open(csv_file, newline='') as csvfile:
+            reader = csv.reader(csvfile)
+            header = next(reader, None)  # Skip the header if present
+            data_loaded = False  # Flag to check if any data is loaded
+            for row in reader:
+                if len(row) == len(tree["columns"]):  # Ensure the row has the right number of columns
+                    tree.insert("", "end", values=row)
+                    data_loaded = True
+                else:
+                    print(f"Skipping invalid row: {row}")  # Debug output for invalid rows
 
-                if not data_loaded:
-                    tree.insert("", "end", values=["No data available"] * len(tree["columns"]))
-
-        # messagebox.showinfo("Data Loaded", "Scraped data successfully loaded into the UI.")
+            if not data_loaded:
+                tree.insert("", "end", values=["No data available"] * len(tree["columns"]))
 
     except FileNotFoundError:
         messagebox.showerror("File Error", "Scraped data file not found!")
     except Exception as e:
         messagebox.showerror("Error", f"An error occurred while loading the data: {e}")
-
 
 def get_years_from_file(file_path):
     years = []
@@ -89,7 +84,6 @@ def get_years_from_file(file_path):
         messagebox.showerror("File Error", f"File {file_path} not found!")
     return sorted(set(years))  # Return unique years sorted
 
-
 # Adjust the query_data function to use the years from the file
 def query_data():
     global url_file
@@ -114,7 +108,7 @@ def query_data():
         return
 
     # Load valid years from the file
-    url_file = f"../basic_codes/URLS/urls_{selected_league.replace(' ', '_').upper()}.txt"
+    url_file = f"C:/Users/Lenovo/football_prediction/basic_codes/URLS/urls_{selected_league.replace(' ', '_').upper()}.txt"
     valid_years = get_years_from_file(url_file)
     if not valid_years:
         messagebox.showerror("Error", "Could not load valid years from the file.")
@@ -137,7 +131,7 @@ def query_data():
 
         filtered_results = []
         for row in results:
-            id, league, date_str, home_team, away_team, home_score, away_score = row
+            league, date_str, home_team, away_team, home_score, away_score = row
             year = extract_year(date_str)
 
             if year:
@@ -174,14 +168,6 @@ def query_data():
         messagebox.showerror("Query Error", f"An error occurred: {e}")
     finally:
         conn.close()
-
-
-# Define a function to clear all data in the Treeview
-def clear_data():
-    for item in tree.get_children():
-        tree.delete(item)
-    # Optionally, insert a placeholder row to indicate the table is empty
-    tree.insert("", "end", values=["No data available"] * len(tree["columns"]))
 
 # Query screen
 def open_query_screen():
@@ -237,10 +223,6 @@ def open_query_screen():
     # Set initial placeholder
     tree.insert("", "end", values=["No data available"] * len(columns))
 
-    # Clear data button
-    clear_button = tk.Button(query_screen, text="CLEAR", command=clear_data)
-    clear_button.pack(pady=10)
-
     # New screen for real-time scraping
     tk.Label(query_screen, text="Fetch Data from Website:").pack(pady=10)
     scrape_button = tk.Button(query_screen, text="START WEB SCRAPING", command=start_scraping)
@@ -275,7 +257,7 @@ def scrape_data():
         print(league_name)
 
         # Construct the URL file path based on the selected league
-        url_file = f"../basic_codes/URLS/urls_{league_name.replace(' ', '_').upper()}.txt"
+        url_file = f"C:/Users/Lenovo/football_prediction/basic_codes/URLS/urls_{league_name.replace(' ', '_').upper()}.txt"
 
         # Construct CSV filename
         csv_file = f"{initial_year}_{end_year}_{league_var.get().replace(' ', '_').lower()}.csv"
