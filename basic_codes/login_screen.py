@@ -7,6 +7,7 @@ import threading
 import csv
 from scrape_all_leagues import scrape_league
 import os
+from scrape_all_TFF import scrape_TFF
 
 # Authenticate user
 def authenticate_user(username, password):
@@ -236,8 +237,11 @@ def open_query_screen():
     clear_button.pack(pady=10)
 
     # New screen for real-time scraping
-    tk.Label(query_screen, text="Fetch Data from Website:").pack(pady=10)
     scrape_button = tk.Button(query_screen, text="START WEB SCRAPING", command=start_scraping)
+    scrape_button.pack(pady=5)
+
+    # New screen for real-time scraping TFF
+    scrape_button = tk.Button(query_screen, text="SCRAPE TÜRKİYE MATCHES", command=start_scraping_TFF)
     scrape_button.pack(pady=5)
 
     query_screen.mainloop()
@@ -254,6 +258,44 @@ def extract_year(date_str):
 def start_scraping():
     # Start the scraping in a separate thread to prevent freezing the UI
     scraping_thread = threading.Thread(target=scrape_data)
+    scraping_thread.daemon = True  # Ensure the thread doesn't keep running after the program exits
+    scraping_thread.start()
+
+
+def scrape_data_TFF():
+    try:
+        # Retrieve the year inputs from the user
+        initial_year = int(initial_year_var.get())
+        end_year = int(end_year_var.get())
+
+        # Get the selected league name from the dropdown
+        league_name = league_var.get()  # This gets the name of the selected league
+        print(league_name)
+
+        # Construct the URL file path based on the selected league
+        url_file = f"../basic_codes/URLS/urls_{league_name.replace(' ', '_').upper()}.txt"
+
+        # Construct CSV filename
+        csv_file = f"{initial_year}_{end_year}_{league_var.get().replace(' ', '_').lower()}.csv"
+
+        # Call the scraping function
+        scrape_TFF(url_file, league_name, initial_year, end_year)
+
+        load_scraped_data_to_ui(csv_file)  # Load data from the new CSV file
+
+    except subprocess.CalledProcessError as e:
+        messagebox.showerror("Error", f"Subprocess error: {e}")
+    except ValueError:
+        messagebox.showerror("Error", "Please enter valid numeric years!")
+    except FileNotFoundError:
+        messagebox.showerror("Error", "Scraped CSV file not found!")
+    except Exception as e:
+        messagebox.showerror("Error", f"An unexpected error occurred: {e}")
+
+
+def start_scraping_TFF():
+    # Start the scraping in a separate thread to prevent freezing the UI
+    scraping_thread = threading.Thread(target=scrape_data_TFF)
     scraping_thread.daemon = True  # Ensure the thread doesn't keep running after the program exits
     scraping_thread.start()
 
@@ -287,6 +329,7 @@ def scrape_data():
         messagebox.showerror("Error", "Scraped CSV file not found!")
     except Exception as e:
         messagebox.showerror("Error", f"An unexpected error occurred: {e}")
+
 
 # Login screen
 root = tk.Tk()

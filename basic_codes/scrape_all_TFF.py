@@ -9,16 +9,20 @@ options = webdriver.ChromeOptions()
 driver = webdriver.Chrome(options=options)
 
 
-def generate_urls(base_url, start_week, end_week):
-    """Generate URLs for a range of weeks."""
+def generate_urls(base_url):
+    #Generate URLs for weeks 1 to 34.
     urls = []
+    start_week = 1  # Fixed to 1
+    end_week = 34   # Fixed to 34
     for i in range(start_week, end_week + 1):
         urls.append(base_url.replace("{i}", str(i)))
     return urls
 
 
-def filter_urls_by_year(urls, initial_year, end_year):
+def filter_urls_by_year(url_file, initial_year, end_year):
     filtered_urls = []
+    with open(url_file, mode="r", encoding="utf-8-sig") as file_url:
+        urls = [line.strip() for line in file_url.readlines()]  # Read and strip lines
 
     for url in urls:
         url = url.strip()  # Clean up the URL
@@ -42,57 +46,67 @@ def filter_urls_by_year(urls, initial_year, end_year):
     return filtered_urls
 
 
-def scrape_TFF(base_url, league_name, initial_year, end_year, start_week, end_week):
+def scrape_TFF(base_url, league_name, initial_year, end_year):
     try:
-        # Generate URLs dynamically
-        urls = generate_urls(base_url, start_week, end_week)
-
         # Filter URLs based on the year range
-        filtered_urls = filter_urls_by_year(urls, initial_year, end_year)
+        filtered_urls = filter_urls_by_year(base_url, initial_year, end_year)
+        print(f"Filtered URLS: {filtered_urls}")
 
         all_matches = []
 
         # Loop through each filtered URL
-        for url in filtered_urls:
-            print(f"Processing URL: {url}")
-            driver.get(url)  # Open the URL in the browser
-            time.sleep(5)  # Wait for the page to load
+        for base_url in filtered_urls:
+            print(f"Processing base URL: {base_url}")
 
-            try:
-                # Scrape the page
-                league_element = driver.find_element(By.XPATH,
-                                                     "/html/body/form/div[4]/div/section[2]/article[2]/div[1]/b/i/a")
-                league_name = league_element.text.strip()
+            # Generate URLs dynamically for each base URL
+            urls = generate_urls(base_url)
+            print(f"Generated URLs: {urls}")
 
-                home_teams = driver.find_elements(By.XPATH, "//td[@class='haftaninMaclariEv']/a/span")
-                dates = driver.find_elements(By.XPATH, "//td[@class='haftaninMaclariTarih']")
-                scores = driver.find_elements(By.XPATH, "//td[@class='haftaninMaclariSkor']")
-                away_teams = driver.find_elements(By.XPATH, "//td[@class='haftaninMaclariDeplasman']/a/span")
+            for url in urls:
+                print(f"Processing URL: {url}")
+                driver.get(url)  # Open the URL in the browser
+                time.sleep(5)  # Wait for the page to load
 
-                home_team_names = [team.text.strip() for team in home_teams]
-                match_dates = [date.text.strip() for date in dates]
-                score_results = [score.text.strip() for score in scores]
-                away_team_names = [team.text.strip() for team in away_teams]
+                try:
+                    # Scrape the page
+                    league_element = driver.find_element(By.XPATH,
+                                                         "/html/body/form/div[4]/div/section[2]/article[2]/div[1]/b/i/a")
+                    league_name = league_element.text.strip()
 
-                # Collect match data
-                for home_team, match_date, score, away_team in zip(home_team_names, match_dates, score_results,
-                                                                   away_team_names):
-                    try:
-                        home_score, away_score = map(int, score.split('-'))
-                        all_matches.append({
-                            "League": league_name,
-                            "Date": match_date,
-                            "Home Team": home_team,
-                            "Away Team": away_team,
-                            "Home Score": home_score,
-                            "Away Score": away_score,
-                        })
-                    except ValueError:
-                        print(f"Skipping invalid score: {score}")
+                    home_teams = driver.find_elements(By.XPATH, "//td[@class='haftaninMaclariEv']/a/span")
+                    dates = driver.find_elements(By.XPATH, "//td[@class='haftaninMaclariTarih']")
+                    scores = driver.find_elements(By.XPATH, "//td[@class='haftaninMaclariSkor']")
+                    away_teams = driver.find_elements(By.XPATH, "//td[@class='haftaninMaclariDeplasman']/a/span")
 
-            except Exception as e:
-                print(f"Error scraping data from {url}: {e}")
+                    home_team_names = [team.text.strip() for team in home_teams]
+                    match_dates = [date.text.strip() for date in dates]
+                    score_results = [score.text.strip() for score in scores]
+                    away_team_names = [team.text.strip() for team in away_teams]
 
+                    print(f"Found {len(home_teams)} home teams")
+                    print(f"Found {len(dates)} dates")
+
+                    # Collect match data
+                    for home_team, match_date, score, away_team in zip(home_team_names, match_dates, score_results,
+                                                                       away_team_names):
+                        try:
+                            home_score, away_score = map(int, score.split('-'))
+                            all_matches.append({
+                                "League": league_name,
+                                "Date": match_date,
+                                "Home Team": home_team,
+                                "Away Team": away_team,
+                                "Home Score": home_score,
+                                "Away Score": away_score,
+                            })
+                        except ValueError:
+                            print(f"Skipping invalid score: {score}")
+
+                except Exception as e:
+                    print(f"Error scraping data from {url}: {e}")
+
+        # Check if matches were collected
+        print("Collected matches:", all_matches)
         # Save all matches to CSV
         df = pd.DataFrame(all_matches)
         output_file = f"{initial_year}_{end_year}_{league_name.replace(' ', '_')}.csv"
@@ -102,13 +116,6 @@ def scrape_TFF(base_url, league_name, initial_year, end_year, start_week, end_we
     except Exception as e:
         print(f"Error processing file {base_url}: {e}")
 
+# Call the function with the appropriate arguments
+#scrape_TFF("../basic_codes/URLS/urls_TRENDYOL_SÜPER_LIG.txt", "Trendyol Süper Lig", 2000, 2001)
 
-# Usage example
-scrape_TFF(
-    base_url="https://www.tff.org/Default.aspx?pageID=552&hafta={i}#grp",
-    league_name="Trendyol Süper Lig",
-    initial_year=2001,
-    end_year=2002,
-    start_week=1,
-    end_week=34
-)
