@@ -49,29 +49,49 @@ def scrape_league(url_file, league_name, initial_year, end_year):
             driver.get(url)
             driver.implicitly_wait(5)
 
-            # Extract matches
-            matches = driver.find_elements(By.CLASS_NAME, "fixres__item")
-            for match in matches:
-                try:
-                    date = driver.find_element(By.CLASS_NAME, "fixres__header1").text.strip()
-                    teams = match.find_elements(By.CLASS_NAME, "swap-text__target")
-                    scores = match.find_elements(By.CLASS_NAME, "matches__teamscores-side")
+            # Extract league name (assume it's a global header)
+            try:
+                league_header = driver.find_element(By.CLASS_NAME, 'swap-text__target')
+                league = league_header.text.strip()
+            except:
+                league = 'Unknown'
 
-                    home_team = teams[0].text.strip() if len(teams) > 0 else "Unknown"
-                    away_team = teams[1].text.strip() if len(teams) > 1 else "Unknown"
-                    home_score = scores[0].text.strip() if len(scores) > 0 else "N/A"
-                    away_score = scores[1].text.strip() if len(scores) > 1 else "N/A"
+            # Get all sections containing headers and matches
+            sections = driver.find_elements(By.XPATH, "//div[contains(@class, 'fixres__body')]/..")
 
-                    # Append data
-                    leagues.append(league_name)
-                    dates.append(date)
-                    home_teams.append(home_team)
-                    away_teams.append(away_team)
-                    home_scores.append(home_score)
-                    away_scores.append(away_score)
+            for section in sections:
+                date_headers = driver.find_elements(By.XPATH, "//h3[contains(@class, 'fixres__header1')]")
+                for i, header in enumerate(date_headers):
+                    date = driver.execute_script("return arguments[0].textContent;", header).strip() or "Unknown"
 
-                except Exception as e:
-                    print(f"Error parsing match: {e}")
+                    # Find all matches under this section
+                    match_elements = section.find_elements(By.CLASS_NAME, 'fixres__item')
+
+                    for match in match_elements:
+                        # Extract teams
+                        try:
+                            team_elements = match.find_elements(By.CLASS_NAME, 'swap-text__target')
+                            home_team = team_elements[0].text if len(team_elements) > 0 else 'Unknown'
+                            away_team = team_elements[1].text if len(team_elements) > 1 else 'Unknown'
+                        except:
+                            home_team, away_team = 'Unknown', 'Unknown'
+
+                        # Extract scores
+                        try:
+                            score_elements = match.find_elements(By.CLASS_NAME, 'matches__teamscores-side')
+                            home_score = score_elements[0].text if len(score_elements) > 0 else 'N/A'
+                            away_score = score_elements[1].text if len(score_elements) > 1 else 'N/A'
+                        except:
+                            home_score, away_score = 'N/A', 'N/A'
+
+                        # Append the data to the lists
+                        leagues.append(league)
+                        dates.append(date)
+                        home_teams.append(home_team)
+                        away_teams.append(away_team)
+                        home_scores.append(home_score)
+                        away_scores.append(away_score)
+
         except Exception as e:
             print(f"Error loading URL {url}: {e}")
 
@@ -92,4 +112,4 @@ def scrape_league(url_file, league_name, initial_year, end_year):
     print(f"Data scraping complete. Results saved to {output_file}")
 
 # Usage example
-#scrape_league("../basic_codes/URLS/urls_LA_LIGA.txt", "La Liga", 2024, 2025)
+# scrape_league("../basic_codes/URLS/urls_LA_LIGA.txt", "La Liga", 2024, 2025)
