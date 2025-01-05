@@ -5,12 +5,12 @@ from dateutil import parser
 import subprocess
 import threading
 import csv
-from Spain_LaLiga import scrape_laliga
-
+from scrape_all_leagues import scrape_league
+import os
 
 # Authenticate user
 def authenticate_user(username, password):
-    conn = sqlite3.connect("C:/Users/Lenovo/football_prediction/basic_codes/merged.db")
+    conn = sqlite3.connect("merged.db")
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM Users WHERE username = ? AND password = ?", (username, password))
     result = cursor.fetchone()
@@ -23,12 +23,10 @@ def login():
     password = password_entry.get()
 
     if authenticate_user(username, password):
-        #messagebox.showinfo("Login Successful", "Welcome!")
         root.destroy()  # Close login screen
         open_query_screen()  # Open query screen
     else:
         messagebox.showerror("Login Failed", "Invalid username or password!")
-
 
 def load_scraped_data_to_ui(csv_file):
     try:
@@ -36,50 +34,57 @@ def load_scraped_data_to_ui(csv_file):
         for i in tree.get_children():
             tree.delete(i)
 
+        # Check for the correct path
+        if not os.path.exists(csv_file):
+            print(f"CSV file {csv_file} does not exist.")  # Debug
+            raise FileNotFoundError(f"CSV file {csv_file} not found.")
+
         # Read data from the CSV file
         with open(csv_file, newline='') as csvfile:
             reader = csv.reader(csvfile)
-            header = next(reader)  # Skip the header if present
+            header = next(reader, None)  # Skip the header if present
+            data_loaded = False  # Flag to check if any data is loaded
             for row in reader:
-                # Insert the row into the Treeview
-                tree.insert("", "end", values=row)
+                if len(row) == len(tree["columns"]):  # Ensure the row has the right number of columns
+                    tree.insert("", "end", values=row)
+                    data_loaded = True
+                else:
+                    print(f"Skipping invalid row: {row}")  # Debug output for invalid rows
 
-        # messagebox.showinfo("Data Loaded", "Scraped data successfully loaded into the UI.")
+            if not data_loaded:
+                tree.insert("", "end", values=["No data available"] * len(tree["columns"]))
 
     except FileNotFoundError:
         messagebox.showerror("File Error", "Scraped data file not found!")
     except Exception as e:
         messagebox.showerror("Error", f"An error occurred while loading the data: {e}")
 
-
-def get_years_from_file(file_path):
+def get_years_from_file(file_path, initial_year, end_year):
     years = []
     try:
         with open(file_path, 'r') as file:
             for line in file:
                 line = line.strip()
                 if line:  # Ignore empty lines
-                    print(f"Processing line: {line}")  # Debug output to track the line being processed
                     try:
                         # Extract the "YYYY-YY" part from the URL
-                        year_part = line.split("/")[-1]  # Extract the "YYYY-YY" part
+                        year_part = line.split("/")[-1]
                         first_year = int(year_part.split("-")[0])  # Get the first year (YYYY)
-                        second_year = int(year_part.split("-")[1])  # Get the second year (YY)
-                        full_second_year = 2000 + second_year  # Convert YY to full year (20YY)
+                        second_year = int(year_part.split("-")[1]) + 2000  # Convert YY to full year
 
-                        # Add both years to the list
-                        years.append(first_year)
-                        years.append(full_second_year)
+                        # Include only if within the specified range
+                        if initial_year <= first_year <= end_year and initial_year <= second_year <= end_year:
+                            years.append(first_year)
+                            years.append(second_year)
                     except ValueError:
-                        print(f"Skipping invalid line: {line}")  # Debug invalid lines
-                        continue  # Skip lines that don't have the correct format
+                        continue  # Skip invalid lines
     except FileNotFoundError:
         messagebox.showerror("File Error", f"File {file_path} not found!")
     return sorted(set(years))  # Return unique years sorted
 
-
 # Adjust the query_data function to use the years from the file
 def query_data():
+    global url_file
     selected_league = league_var.get()
     team_name = team_entry.get().strip()
     initial_year = initial_year_var.get().strip()
@@ -93,7 +98,6 @@ def query_data():
     try:
         initial_year = int(initial_year) if initial_year else None
         end_year = int(end_year) if end_year else None
-
         if initial_year and end_year and initial_year > end_year:
             initial_year, end_year = end_year, initial_year  # Swap years if in wrong order
     except ValueError:
@@ -101,7 +105,8 @@ def query_data():
         return
 
     # Load valid years from the file
-    valid_years = get_years_from_file("C:/Users/Lenovo/football_prediction/basic_codes/URLS/urls_SP_LaLiga.txt")
+    url_file = f"C:/Users/Lenovo/football_prediction/basic_codes/URLS/urls_{selected_league.replace(' ', '_').upper()}.txt"
+    valid_years = get_years_from_file(url_file)
     if not valid_years:
         messagebox.showerror("Error", "Could not load valid years from the file.")
         return
@@ -123,7 +128,7 @@ def query_data():
 
         filtered_results = []
         for row in results:
-            row_id, league, date_str, home_team, away_team, home_score, away_score = row
+            league, date_str, home_team, away_team, home_score, away_score = row
             year = extract_year(date_str)
 
             if year:
@@ -134,13 +139,13 @@ def query_data():
                 if team_name and team_name.lower() not in (home_team.lower() + away_team.lower()):
                     continue
                 if initial_year and end_year:
-                    if not (initial_year <= year <= end_year):
+                    if (initial_year <= year < end_year):
                         continue
                 elif initial_year and not end_year:
-                    if year < initial_year:
+                    if year <= initial_year:
                         continue
                 elif end_year and not initial_year:
-                    if year > end_year:
+                    if year < end_year:
                         continue
 
                 filtered_results.append(row)
@@ -161,6 +166,12 @@ def query_data():
     finally:
         conn.close()
 
+# Define a function to clear all data in the Treeview
+def clear_data():
+    for item in tree.get_children():
+        tree.delete(item)
+    # Optionally, insert a placeholder row to indicate the table is empty
+    tree.insert("", "end", values=["No data available"] * len(tree["columns"]))
 
 
 # Query screen
@@ -214,6 +225,13 @@ def open_query_screen():
         tree.column(col, width=100)
     tree.pack(pady=10, fill="both", expand=True)
 
+    # Set initial placeholder
+    tree.insert("", "end", values=["No data available"] * len(columns))
+
+    # Clear data button
+    clear_button = tk.Button(query_screen, text="CLEAR", command=clear_data)
+    clear_button.pack(pady=10)
+
     # New screen for real-time scraping
     tk.Label(query_screen, text="Fetch Data from Website:").pack(pady=10)
     scrape_button = tk.Button(query_screen, text="START WEB SCRAPING", command=start_scraping)
@@ -223,7 +241,7 @@ def open_query_screen():
 
 def extract_year(date_str):
     try:
-        # Attempt to parse the date using `dateutil.parser`
+        # Attempt to parse the date using `dateutil.parser
         date_obj = parser.parse(date_str, fuzzy=True)
         return date_obj.year
     except (ValueError, TypeError):
@@ -233,6 +251,7 @@ def extract_year(date_str):
 def start_scraping():
     # Start the scraping in a separate thread to prevent freezing the UI
     scraping_thread = threading.Thread(target=scrape_data)
+    scraping_thread.daemon = True  # Ensure the thread doesn't keep running after the program exits
     scraping_thread.start()
 
 
@@ -240,22 +259,37 @@ def scrape_data():
     try:
         # Retrieve the year inputs from the user
         initial_year = int(initial_year_var.get())
-        print(initial_year)
         end_year = int(end_year_var.get())
-        print(end_year)
+
+        # Get the selected league name from the dropdown
+        league_name = league_var.get()
+
+        # Construct the URL file path
+        url_file = f"C:/Users/Lenovo/football_prediction/basic_codes/URLS/urls_{league_name.replace(' ', '_').upper()}.txt"
+
+        # Load valid years within the range
+        valid_years = get_years_from_file(url_file, initial_year, end_year)
+
+        # Check if any valid years exist
+        if not valid_years:
+            messagebox.showerror("Error", "No valid years found in the specified range!")
+            return
+
+        # Construct CSV filename
+        csv_file = f"{initial_year}_{end_year}_{league_name.replace(' ', '_').lower()}.csv"
 
         # Call the scraping function
-        scrape_laliga(initial_year, end_year)
+        scrape_league(url_file, league_name, initial_year, end_year)
 
-        # The CSV file generated will be named `start_year_end_year_SP_laliga.csv`
-        csv_file = f"{initial_year}_{end_year}_SP_laliga.csv"
-        load_scraped_data_to_ui(csv_file)  # Load data from the new CSV file
+        # Load scraped data into UI
+        load_scraped_data_to_ui(csv_file)
 
-    except subprocess.CalledProcessError as e:
-        messagebox.showerror("Error", f"Subprocess error: {e}")
     except ValueError:
         messagebox.showerror("Error", "Please enter valid numeric years!")
-
+    except FileNotFoundError:
+        messagebox.showerror("Error", "Scraped CSV file not found!")
+    except Exception as e:
+        messagebox.showerror("Error", f"An unexpected error occurred: {e}")
 
 # Login screen
 root = tk.Tk()
