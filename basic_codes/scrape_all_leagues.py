@@ -11,9 +11,6 @@ def filter_urls_by_year(urls, initial_year, end_year):
     filtered_urls = []
     for url in urls:
         url = url.strip()  # Clean up the URL
-        if not url or not url.startswith("http"):
-            print(f"Skipping invalid URL: {url}")
-            continue
 
         # Extract the year part from the URL
         year_part = url.split("/")[-1]  # Adjust this based on your URL structure
@@ -95,4 +92,4 @@ def scrape_league(url_file, league_name, initial_year, end_year):
     print(f"Data scraping complete. Results saved to {output_file}")
 
 # Usage example
-scrape_league("../basic_codes/URLS/urls_LA_LIGA.txt", "La Liga", 2024, 2025)
+#scrape_league("../basic_codes/URLS/urls_LA_LIGA.txt", "La Liga", 2024, 2025)
