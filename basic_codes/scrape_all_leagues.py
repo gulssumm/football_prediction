@@ -4,10 +4,27 @@ import pandas as pd
 
 # Set up Selenium WebDriver
 options = webdriver.ChromeOptions()
-# options.add_argument("--headless")  # Run in headless mode (optional)
+# options.add_argument("--headless")  # Uncomment to run in headless mode
 driver = webdriver.Chrome(options=options)
 
-# Scrape function for any league
+def filter_urls_by_year(urls, initial_year, end_year):
+    filtered_urls = []
+    for url in urls:
+        url = url.strip()  # Clean up the URL
+
+        # Extract the year part from the URL
+        year_part = url.split("/")[-1]  # Adjust this based on your URL structure
+        try:
+            first_year, second_year = map(int, year_part.split("-"))
+            full_second_year = 2000 + second_year
+            if initial_year <= first_year <= end_year or initial_year <= full_second_year <= end_year:
+                filtered_urls.append(url)
+        except ValueError:
+            print(f"Skipping URL with invalid year format: {url}")
+
+    print(f"Filtered URLs: {filtered_urls}")
+    return filtered_urls
+
 def scrape_league(url_file, league_name, initial_year, end_year):
     # Initialize empty lists to store the extracted data
     leagues = []
@@ -21,60 +38,31 @@ def scrape_league(url_file, league_name, initial_year, end_year):
     with open(url_file, "r") as file:
         urls = file.readlines()
 
+    # Filter the URLs based on the year range
+    filtered_urls = filter_urls_by_year(urls, initial_year, end_year)
+
     # Loop through each URL and scrape the data
-    for url in urls:
-        url = url.strip()  # Remove any leading/trailing whitespace
-        print(f"Processed URL: '{url}'")  # Debug print
-        if not url:
-            print("Skipping empty URL")
-            continue
-        if not url.startswith("http"):
-            print(f"Skipping invalid URL: '{url}'")
-            continue
-        if not url:
-            continue  # Skip empty lines
+    for url in filtered_urls:
+        print(f"Processing URL: {url}")
 
-        # Open the URL
-        driver.get(url)
-        driver.implicitly_wait(5)  # Wait for the page to load
-
-        # Extract league name (assume it's a global header)
         try:
-            league_header = driver.find_element(By.CLASS_NAME, 'swap-text__target')
-            league = league_header.text.strip()
-        except:
-            league = 'Unknown'
+            driver.get(url)
+            driver.implicitly_wait(5)
 
-        # Get all sections containing headers and matches
-        sections = driver.find_elements(By.XPATH, "//div[contains(@class, 'fixres__body')]/..")
+            # Extract matches
+            matches = driver.find_elements(By.CLASS_NAME, "fixres__item")
+            for match in matches:
+                try:
+                    date = driver.find_element(By.CLASS_NAME, "fixres__header1").text.strip()
+                    teams = match.find_elements(By.CLASS_NAME, "swap-text__target")
+                    scores = match.find_elements(By.CLASS_NAME, "matches__teamscores-side")
 
-        # Loop through each section
-        for section in sections:
-            date_headers = driver.find_elements(By.XPATH, "//h3[contains(@class, 'fixres__header1')]")
-            for i, header in enumerate(date_headers):
-                date = driver.execute_script("return arguments[0].textContent;", header).strip() or "Unknown"
+                    home_team = teams[0].text.strip() if len(teams) > 0 else "Unknown"
+                    away_team = teams[1].text.strip() if len(teams) > 1 else "Unknown"
+                    home_score = scores[0].text.strip() if len(scores) > 0 else "N/A"
+                    away_score = scores[1].text.strip() if len(scores) > 1 else "N/A"
 
-                # Find all matches under this section
-                match_elements = section.find_elements(By.CLASS_NAME, 'fixres__item')
-
-                for match in match_elements:
-                    # Extract teams
-                    try:
-                        team_elements = match.find_elements(By.CLASS_NAME, 'swap-text__target')
-                        home_team = team_elements[0].text if len(team_elements) > 0 else 'Unknown'
-                        away_team = team_elements[1].text if len(team_elements) > 1 else 'Unknown'
-                    except:
-                        home_team, away_team = 'Unknown', 'Unknown'
-
-                    # Extract scores
-                    try:
-                        score_elements = match.find_elements(By.CLASS_NAME, 'score')
-                        home_score = score_elements[0].text if len(score_elements) > 0 else '0'
-                        away_score = score_elements[1].text if len(score_elements) > 1 else '0'
-                    except:
-                        home_score, away_score = '0', '0'
-
-                    # Store the data
+                    # Append data
                     leagues.append(league_name)
                     dates.append(date)
                     home_teams.append(home_team)
@@ -82,17 +70,26 @@ def scrape_league(url_file, league_name, initial_year, end_year):
                     home_scores.append(home_score)
                     away_scores.append(away_score)
 
-    # Create a DataFrame and save the data as a CSV file
-    df = pd.DataFrame({
-        'League': leagues,
-        'Date': dates,
-        'Home_Team': home_teams,
-        'Away_Team': away_teams,
-        'Home_Score': home_scores,
-        'Away_Score': away_scores
-    })
+                except Exception as e:
+                    print(f"Error parsing match: {e}")
+        except Exception as e:
+            print(f"Error loading URL {url}: {e}")
 
-    # Save the DataFrame to a CSV file
-    csv_file = f"{initial_year}_{end_year}_{league_name.replace(' ', '_').lower()}.csv"
-    df.to_csv(csv_file, index=False)
-    print(f"Scraped data saved to {csv_file}")
+    driver.quit()
+
+    # Save results to CSV
+    data = {
+        "League": leagues,
+        "Date": dates,
+        "Home Team": home_teams,
+        "Away Team": away_teams,
+        "Home Score": home_scores,
+        "Away Score": away_scores,
+    }
+    df = pd.DataFrame(data)
+    output_file = f"{initial_year}_{end_year}_{league_name.replace(' ', '_')}.csv"
+    df.to_csv(output_file, index=False)
+    print(f"Data scraping complete. Results saved to {output_file}")
+
+# Usage example
+#scrape_league("../basic_codes/URLS/urls_LA_LIGA.txt", "La Liga", 2024, 2025)
