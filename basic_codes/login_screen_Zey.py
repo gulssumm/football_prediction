@@ -5,7 +5,7 @@ from dateutil import parser
 import subprocess
 import threading
 import csv
-from scrape_all_leagues import scrape_league
+from scrape_all_league_Zey import scrape_league
 import os
 
 # Authenticate user
