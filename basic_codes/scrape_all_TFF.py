@@ -118,4 +118,4 @@ def scrape_TFF(file_path, league_name, start_year, end_year):
 
 # Call the function with appropriate arguments
 # Example usage
-scrape_TFF("../basic_codes/URLS/urls_TRENDYOL_SÜPER_LIG.txt", "Trendyol Süper Lig", 2000, 2002)
+# scrape_TFF("../basic_codes/URLS/urls_TRENDYOL_SÜPER_LIG.txt", "Trendyol Süper Lig", 2000, 2002)
