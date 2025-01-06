@@ -9,58 +9,62 @@ options = webdriver.ChromeOptions()
 driver = webdriver.Chrome(options=options)
 
 
-def generate_urls(base_url):
-    #Generate URLs for weeks 1 to 34.
-    urls = []
-    start_week = 1  # Fixed to 1
-    end_week = 34   # Fixed to 34
-    for i in range(start_week, end_week + 1):
-        urls.append(base_url.replace("{i}", str(i)))
-    return urls
+def generate_urls(base_url, start_week=1, end_week=34):
+    # Generate URLs for weeks 1 to 34
+    return [base_url.replace("{i}", str(i)) for i in range(start_week, end_week + 1)]
 
 
-def filter_urls_by_year(url_file, initial_year, end_year):
-    filtered_urls = []
-    with open(url_file, mode="r", encoding="utf-8-sig") as file_url:
-        urls = [line.strip() for line in file_url.readlines()]  # Read and strip lines
-
-    for url in urls:
-        url = url.strip()  # Clean up the URL
-
-        try:
-            # Extract year range from URL and derive actual years (adjust this logic for your URL structure)
-            year_part = url.split("?pageID=")[1].split("&")[0]
-            year_range = int(year_part)
-
-            # Example mapping logic: Adjust to match your specific format
-            start_year = 1950 + (year_range - 500)
-            end_year_actual = start_year + 1
-
-            # Check if the year range falls within the desired range
-            if initial_year <= start_year <= end_year or initial_year <= end_year_actual <= end_year:
-                filtered_urls.append(url)
-        except (IndexError, ValueError):
-            print(f"Skipping URL with invalid format: {url}")
-
-    print(f"Filtered URLs: {filtered_urls}")
-    return filtered_urls
-
-
-def scrape_TFF(base_url, league_name, initial_year, end_year):
+def get_urls_for_year_range(file_path, start_year, end_year):
     try:
-        # Filter URLs based on the year range
-        filtered_urls = filter_urls_by_year(base_url, initial_year, end_year)
-        print(f"Filtered URLS: {filtered_urls}")
+        # Read URLs from the file
+        with open(file_path, "r", encoding="utf-8-sig") as file:
+            urls = [line.strip() for line in file.readlines() if line.strip()]
+
+        if not urls:
+            raise ValueError("The file is empty or no URLs were read.")
+
+        print(f"Total URLs read: {len(urls)}")
+        print(f"URLs: {urls}")
+
+        # Calculate indices
+        start_index = start_year - 2000
+        end_index = end_year - 2000
+
+        print(f"Start index: {start_index}, End index: {end_index}")
+
+        # Select URLs
+        if start_year == end_year:
+            selected_urls = [urls[start_index]]
+        else:
+            selected_urls = urls[start_index:end_index]
+
+        if not selected_urls:
+            raise ValueError("No URLs selected for the given year range.")
+
+        print(f"Selected URLs: {selected_urls}")
+        return selected_urls
+
+    except FileNotFoundError:
+        print(f"Error: File not found at {file_path}")
+        return None
+    except ValueError as e:
+        print(f"Error: {e}")
+        return None
+
+
+def scrape_TFF(file_path, league_name, start_year, end_year):
+    try:
+        # Get URLs for the specified year range
+        filtered_urls = get_urls_for_year_range(file_path, start_year, end_year)
 
         all_matches = []
 
-        # Loop through each filtered URL
+        # Loop through each base URL
         for base_url in filtered_urls:
             print(f"Processing base URL: {base_url}")
 
             # Generate URLs dynamically for each base URL
             urls = generate_urls(base_url)
-            print(f"Generated URLs: {urls}")
 
             for url in urls:
                 print(f"Processing URL: {url}")
@@ -83,9 +87,6 @@ def scrape_TFF(base_url, league_name, initial_year, end_year):
                     score_results = [score.text.strip() for score in scores]
                     away_team_names = [team.text.strip() for team in away_teams]
 
-                    print(f"Found {len(home_teams)} home teams")
-                    print(f"Found {len(dates)} dates")
-
                     # Collect match data
                     for home_team, match_date, score, away_team in zip(home_team_names, match_dates, score_results,
                                                                        away_team_names):
@@ -105,17 +106,16 @@ def scrape_TFF(base_url, league_name, initial_year, end_year):
                 except Exception as e:
                     print(f"Error scraping data from {url}: {e}")
 
-        # Check if matches were collected
-        print("Collected matches:", all_matches)
         # Save all matches to CSV
         df = pd.DataFrame(all_matches)
-        output_file = f"{initial_year}_{end_year}_{league_name.replace(' ', '_')}.csv"
+        output_file = f"{start_year}_{end_year}_{league_name.replace(' ', '_')}.csv"
         df.to_csv(output_file, index=False)
         print(f"Data scraping complete. Results saved to {output_file}")
 
     except Exception as e:
-        print(f"Error processing file {base_url}: {e}")
+        print(f"Error processing file {file_path}: {e}")
 
-# Call the function with the appropriate arguments
-#scrape_TFF("../basic_codes/URLS/urls_TRENDYOL_SÜPER_LIG.txt", "Trendyol Süper Lig", 2000, 2001)
 
+# Call the function with appropriate arguments
+# Example usage
+scrape_TFF("../basic_codes/URLS/urls_TRENDYOL_SÜPER_LIG.txt", "Trendyol Süper Lig", 2000, 2002)

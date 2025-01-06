@@ -270,7 +270,6 @@ def scrape_data_TFF():
 
         # Get the selected league name from the dropdown
         league_name = league_var.get()  # This gets the name of the selected league
-        print(league_name)
 
         # Construct the URL file path based on the selected league
         url_file = f"../basic_codes/URLS/urls_{league_name.replace(' ', '_').upper()}.txt"
