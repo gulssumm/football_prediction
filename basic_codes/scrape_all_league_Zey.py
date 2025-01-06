@@ -1,11 +1,7 @@
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 import pandas as pd
-
-# Set up Selenium WebDriver
-options = webdriver.ChromeOptions()
-# options.add_argument("--headless")  # Uncomment to run in headless mode
-driver = webdriver.Chrome(options=options)
+import time
 
 def filter_urls_by_year(urls, initial_year, end_year):
     filtered_urls = []
@@ -26,6 +22,11 @@ def filter_urls_by_year(urls, initial_year, end_year):
     return filtered_urls
 
 def scrape_league(url_file, league_name, initial_year, end_year):
+    # Initialize Selenium WebDriver
+    options = webdriver.ChromeOptions()
+    # options.add_argument("--headless")  # Uncomment to run in headless mode
+    driver = webdriver.Chrome(options=options)
+
     # Initialize empty lists to store the extracted data
     leagues = []
     dates = []
@@ -48,6 +49,17 @@ def scrape_league(url_file, league_name, initial_year, end_year):
         try:
             driver.get(url)
             driver.implicitly_wait(5)
+
+            # Inside scrape_league function
+            while True:
+                try:
+                    show_more_span = driver.find_element(By.XPATH, "//span[@class='plus-more__text' and text()='Show More']")
+                    show_more_button = show_more_span.find_element(By.XPATH, "./ancestor::button")
+                    driver.execute_script("arguments[0].click();", show_more_button)
+                    time.sleep(2)
+                except Exception as e:
+                    print("No more 'Show More' button or all data loaded.")
+                    break
 
             # Extract league name (assume it's a global header)
             try:
@@ -95,7 +107,7 @@ def scrape_league(url_file, league_name, initial_year, end_year):
         except Exception as e:
             print(f"Error loading URL {url}: {e}")
 
-    #driver.quit()
+    driver.quit()  # Ensure WebDriver quits after processing
 
     # Save results to CSV
     data = {
@@ -110,6 +122,3 @@ def scrape_league(url_file, league_name, initial_year, end_year):
     output_file = f"{initial_year}_{end_year}_{league_name.replace(' ', '_')}.csv"
     df.to_csv(output_file, index=False)
     print(f"Data scraping complete. Results saved to {output_file}")
-
-# Usage example
-# scrape_league("../basic_codes/URLS/urls_LA_LIGA.txt", "La Liga", 2024, 2025)
