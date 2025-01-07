@@ -5,8 +5,6 @@ from dateutil import parser
 import subprocess
 import threading
 import csv
-
-from basic_codes.onebyone_leagues.SP_Create_URL import end_year
 from scrape_all_leagues import scrape_league
 import os
 from scrape_all_TFF import scrape_TFF
