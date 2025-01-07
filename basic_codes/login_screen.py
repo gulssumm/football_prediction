@@ -41,7 +41,7 @@ def load_scraped_data_to_ui(csv_file):
             raise FileNotFoundError(f"CSV file {csv_file} not found.")
 
         # Read data from the CSV file
-        with open(csv_file, newline='') as csvfile:
+        with open(csv_file, newline='', encoding='utf-8') as csvfile:
             reader = csv.reader(csvfile)
             header = next(reader, None)  # Skip the header if present
             data_loaded = False  # Flag to check if any data is loaded
