@@ -8,7 +8,6 @@ import csv
 from scrape_all_leagues import scrape_league
 import os
 from scrape_all_TFF import scrape_TFF
-import re
 
 # Authenticate user
 def authenticate_user(username, password):
@@ -86,26 +85,6 @@ def get_years_from_file(file_path):
         messagebox.showerror("File Error", f"File {file_path} not found!")
     return sorted(set(years))  # Return unique years sorted
 
-
-def get_years_from_file_TFF(file_path):
-    years = []
-    try:
-        with open(file_path, "r") as file:
-            lines = file.readlines()
-            for line in lines:
-                if 'hafta' in line:
-                    # Extract the haftas and infer the year range
-                    match = re.search(r"hafta=(\d+)", line)
-                    if match:
-                        haftas = int(match.group(1))
-                        year = 2000 + (haftas - 1) // 34  # Adjust to your year-to-hafta mapping
-                        years.append(f"{year}-{year + 1}")
-    except FileNotFoundError:
-        return []
-
-    return years
-
-
 # Adjust the query_data function to use the years from the file
 def query_data():
     global url_file
@@ -129,20 +108,14 @@ def query_data():
         messagebox.showerror("Error", "Please enter valid numeric years!")
         return
 
-
-    if selected_league in ["Trendyol 1.Lig", "Trendyol Süper Lig"]:
+    if selected_league in ["Türkiye 1.Lig", "Türkiye Süper Lig"]:
         url_file = f"../basic_codes/URLS/generated_urls_{selected_league.replace('', '_').upper()}.txt"
-        valid_years = get_years_from_file_TFF(url_file)
-        if not valid_years:
-            messagebox.showerror("Error", "Could not load valid years from the file.")
-            return
     else:
         url_file = f"../basic_codes/URLS/urls_{selected_league.replace(' ', '_').upper()}.txt"
-        valid_years = get_years_from_file(url_file)
-        if not valid_years:
-            messagebox.showerror("Error", "Could not load valid years from the file.")
-            return
-
+    valid_years = get_years_from_file(url_file)
+    if not valid_years:
+        messagebox.showerror("Error", "Could not load valid years from the file.")
+        return
 
     # Filter user-provided years by valid years
     if initial_year and initial_year not in valid_years:
@@ -172,13 +145,13 @@ def query_data():
                 if team_name and team_name.lower() not in (home_team.lower() + away_team.lower()):
                     continue
                 if initial_year and end_year:
-                    if not (initial_year <= year < end_year):
+                    if not (initial_year <= year <= end_year):
                         continue
                 elif initial_year and not end_year:
-                    if year <= initial_year:
+                    if year < initial_year:
                         continue
                 elif end_year and not initial_year:
-                    if year < end_year:
+                    if year > end_year:
                         continue
 
                 filtered_results.append(row)
@@ -301,7 +274,7 @@ def scrape_data_TFF():
         league_name = league_var.get()  # This gets the name of the selected league
 
         # Construct the URL file path based on the selected league
-        url_file = f"../basic_codes/URLS/generated_urls_{league_name.replace(' ', '_').upper()}.txt"
+        url_file = f"../basic_codes/URLS/urls_{league_name.replace(' ', '_').upper()}.txt"
 
         # Construct CSV filename
         csv_file = f"{initial_year}_{end_year}_{league_var.get().replace(' ', '_').lower()}.csv"

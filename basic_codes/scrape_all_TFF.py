@@ -9,6 +9,11 @@ options = webdriver.ChromeOptions()
 driver = webdriver.Chrome(options=options)
 
 
+def generate_urls(base_url, start_week=1, end_week=34):
+    # Generate URLs for weeks 1 to 34
+    return [base_url.replace("{i}", str(i)) for i in range(start_week, end_week + 1)]
+
+
 def get_urls_for_year_range(file_path, start_year, end_year):
     try:
         # Read URLs from the file
@@ -23,7 +28,7 @@ def get_urls_for_year_range(file_path, start_year, end_year):
 
         # Calculate indices
         start_index = start_year - 2000
-        end_index = end_year - 2000 + 34
+        end_index = end_year - 2000
 
         print(f"Start index: {start_index}, End index: {end_index}")
 
@@ -56,8 +61,12 @@ def scrape_TFF(file_path, league_name, start_year, end_year):
 
         # Loop through each base URL
         for base_url in filtered_urls:
-                print(f"Processing URL: {base_url}")
-                driver.get(base_url)  # Open the URL in the browser
+            print(f"Processing base URL: {base_url}")
+            # Generate URLs dynamically for each base URL
+            urls = generate_urls(base_url)
+            for url in urls:
+                print(f"Processing URL: {url}")
+                driver.get(url)  # Open the URL in the browser
                 time.sleep(5)  # Wait for the page to load
 
                 try:
@@ -93,7 +102,7 @@ def scrape_TFF(file_path, league_name, start_year, end_year):
                             print(f"Skipping invalid score: {score}")
 
                 except Exception as e:
-                    print(f"Error scraping data from {base_url}: {e}")
+                    print(f"Error scraping data from {url}: {e}")
 
         # Save all matches to CSV
         df = pd.DataFrame(all_matches)
@@ -107,4 +116,4 @@ def scrape_TFF(file_path, league_name, start_year, end_year):
 
 # Call the function with appropriate arguments
 # Example usage
-# scrape_TFF("../basic_codes/URLS/urls_TRENDYOL_SÜPER_LIG.txt", "Trendyol Süper Lig", 2000, 2002)
+#scrape_TFF("../basic_codes/URLS/urls_TRENDYOL_SÜPER_LIG.txt", "Trendyol Süper Lig", 2002,2003)
