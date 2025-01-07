@@ -87,20 +87,23 @@ def get_years_from_file(file_path):
     return sorted(set(years))  # Return unique years sorted
 
 
-def get_years_from_file_TFF(file_path):
+def get_years_from_file_TFF(file_path, initial_year=2000):
     years = []
     try:
         with open(file_path, "r") as file:
             lines = file.readlines()
-            for line in lines:
-                if 'hafta' in line:
-                    # Extract the haftas and infer the year range
-                    match = re.search(r"hafta=(\d+)", line)
-                    if match:
-                        haftas = int(match.group(1))
-                        year = 2000 + (haftas - 1) // 34  # Adjust to your year-to-hafta mapping
-                        years.append(f"{year}-{year + 1}")
+            current_year = initial_year
+            for index, line in enumerate(lines, start=1):
+                # Extract 'hafta' and group every 34 URLs into a year range
+                match = re.search(r"hafta=(\d+)", line)
+                if match:
+                    hafta = int(match.group(1))
+                    if hafta == 1:  # Start a new year group
+                        years.append(f"{current_year}-{current_year + 1}")
+                        if index % 34 == 0:  # Update year after every 34 entries
+                            current_year += 1
     except FileNotFoundError:
+        print(f"Error: File {file_path} not found.")
         return []
 
     return years
