@@ -172,13 +172,13 @@ def query_data():
                 if team_name and team_name.lower() not in (home_team.lower() + away_team.lower()):
                     continue
                 if initial_year and end_year:
-                    if not (initial_year <= year <= end_year):
+                    if not (initial_year <= year < end_year):
                         continue
                 elif initial_year and not end_year:
-                    if year < initial_year:
+                    if year <= initial_year:
                         continue
                 elif end_year and not initial_year:
-                    if year > end_year:
+                    if year < end_year:
                         continue
 
                 filtered_results.append(row)
