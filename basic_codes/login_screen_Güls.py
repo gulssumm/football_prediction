@@ -5,6 +5,8 @@ from dateutil import parser
 import subprocess
 import threading
 import csv
+
+from basic_codes.onebyone_leagues.SP_Create_URL import end_year
 from scrape_all_leagues import scrape_league
 import os
 from scrape_all_TFF import scrape_TFF
@@ -92,16 +94,17 @@ def get_years_from_file_TFF(file_path, initial_year=2000):
     try:
         with open(file_path, "r") as file:
             lines = file.readlines()
-            current_year = initial_year
+            # current_year = initial_year
             for index, line in enumerate(lines, start=1):
                 # Extract 'hafta' and group every 34 URLs into a year range
                 match = re.search(r"hafta=(\d+)", line)
                 if match:
                     hafta = int(match.group(1))
                     if hafta == 1:  # Start a new year group
-                        years.append(f"{current_year}-{current_year + 1}")
+                        end_year = initial_year + 1
+                        years.append(f"{initial_year}-{end_year}")
                         if index % 34 == 0:  # Update year after every 34 entries
-                            current_year += 1
+                            initial_year += 1
     except FileNotFoundError:
         print(f"Error: File {file_path} not found.")
         return []
@@ -126,26 +129,39 @@ def query_data():
         initial_year = int(initial_year) if initial_year else None
         end_year = int(end_year) if end_year else None
 
+        print(initial_year)
+        print(end_year)
+
         if initial_year and end_year and initial_year > end_year:
             initial_year, end_year = end_year, initial_year  # Swap years if in wrong order
     except ValueError:
         messagebox.showerror("Error", "Please enter valid numeric years!")
         return
 
-
     if selected_league in ["Trendyol 1.Lig", "Trendyol Süper Lig"]:
-        url_file = f"../basic_codes/URLS/generated_urls_{selected_league.replace('', '_').upper()}.txt"
+        # Properly construct the file name
+        league_file_name = selected_league.replace(" ", "_").upper()
+        url_file = f"../basic_codes/URLS/generated_urls_{league_file_name}.txt"
         valid_years = get_years_from_file_TFF(url_file)
+        print(valid_years)
+
         if not valid_years:
             messagebox.showerror("Error", "Could not load valid years from the file.")
             return
+        # Convert the year ranges into individual years for validation
+        expanded_years = []
+        for year_range in valid_years:
+            start, end = map(int, year_range.split("-"))
+            expanded_years.extend(range(start, end + 1))
+
+        valid_years = expanded_years
     else:
-        url_file = f"../basic_codes/URLS/urls_{selected_league.replace(' ', '_').upper()}.txt"
+        league_file_name = selected_league.replace(" ", "_").upper()
+        url_file = f"../basic_codes/URLS/urls_{league_file_name}.txt"
         valid_years = get_years_from_file(url_file)
         if not valid_years:
             messagebox.showerror("Error", "Could not load valid years from the file.")
             return
-
 
     # Filter user-provided years by valid years
     if initial_year and initial_year not in valid_years:
